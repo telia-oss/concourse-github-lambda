@@ -30,7 +30,7 @@ module "github-lambda-trigger" {
   lambda_arn = "${module.github-lambda.function_arn}"
   team_config = <<EOF
 {
-  "name": "",
+  "name": "example-team",
   "keyId": "",
   "repositories": [
     "go-hooks"
