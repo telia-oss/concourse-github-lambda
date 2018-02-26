@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/google/go-github/github"
@@ -26,6 +27,7 @@ type RepositoriesService interface {
 type Manager struct {
 	repoClient RepositoriesService
 	ssmClient  ssmiface.SSMAPI
+	ec2Client  ec2iface.EC2API
 	region     string
 	owner      string
 	ctx        context.Context
@@ -42,6 +44,7 @@ func NewManager(sess *session.Session, region, owner, token string) *Manager {
 	return &Manager{
 		repoClient: github.NewClient(tc).Repositories,
 		ssmClient:  ssm.New(sess, config),
+		ec2Client:  ec2.New(sess, config),
 		region:     region,
 		owner:      owner,
 		ctx:        context.Background(),
@@ -94,33 +97,40 @@ func (m *Manager) WriteSecret(name, value, key string) error {
 }
 
 // GenerateKeyPair to use as deploy key.
-func (m *Manager) GenerateKeyPair() (privateKey []byte, publicKey []byte, err error) {
-	bitSize := 4096
-
-	// Private key
-	private, err := rsa.GenerateKey(rand.Reader, bitSize)
+func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey string, err error) {
+	// Have EC2 Generate a new private key
+	res, err := m.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
+		KeyName: aws.String(title),
+	})
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
-	err = private.Validate()
+
+	// Remember to clean up temporary key when done
+	defer func() {
+		m.ec2Client.DeleteKeyPair(&ec2.DeleteKeyPairInput{
+			KeyName: aws.String(title),
+		})
+	}()
+	privateKey = aws.StringValue(res.KeyMaterial)
+	fmt.Println(privateKey)
+
+	// Parse the private key
+	block, _ := pem.Decode([]byte(privateKey))
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 
-	// Encode
-	block := pem.Block{
-		Type:    "RSA PRIVATE KEY",
-		Headers: nil,
-		Bytes:   x509.MarshalPKCS1PrivateKey(private),
-	}
-	privateKey = pem.EncodeToMemory(&block)
-
-	// Public key
-	public, err := ssh.NewPublicKey(&private.PublicKey)
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 
-	publicKey = ssh.MarshalAuthorizedKey(public)
+	public, err := ssh.NewPublicKey(&key.PublicKey)
+	if err != nil {
+		return "", "", err
+	}
+	publicKey = string(ssh.MarshalAuthorizedKey(public))
+
 	return privateKey, publicKey, nil
 }

@@ -33,6 +33,19 @@ data "aws_iam_policy_document" "lambda" {
     effect = "Allow"
 
     actions = [
+      "ec2:CreateKeyPair",
+      "ec2:DeleteKeyPair",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents",

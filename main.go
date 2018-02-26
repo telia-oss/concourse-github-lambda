@@ -66,10 +66,13 @@ func Handler(team Team) error {
 		}
 
 		// Generate a new key pair
-		private, public, err := manager.GenerateKeyPair()
+		private, public, err := manager.GenerateKeyPair(keyTitle)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate key pair")
+		}
 
 		// Write the new public key to Github
-		if _, err = manager.CreateKey(repository, keyTitle, string(public)); err != nil {
+		if _, err = manager.CreateKey(repository, keyTitle, public); err != nil {
 			return errors.Wrap(err, "failed to create key on github")
 		}
 
@@ -78,7 +81,7 @@ func Handler(team Team) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to parse ssm secret path")
 		}
-		if err = manager.WriteSecret(secretPath, string(private), team.KeyID); err != nil {
+		if err = manager.WriteSecret(secretPath, private, team.KeyID); err != nil {
 			return errors.Wrap(err, "failed to write private key to ssm")
 		}
 
