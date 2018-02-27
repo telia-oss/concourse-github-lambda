@@ -1,5 +1,7 @@
 ## concourse-github-lambda
 
+[![Build Status](https://travis-ci.org/TeliaSoneraNorge/concourse-github-lambda.svg?branch=master)](https://travis-ci.org/TeliaSoneraNorge/concourse-github-lambda)
+
 Lambda function to rotate Github deploy keys used by Concourse teams. See 
 the terraform subdirectory for an example that should work (with minimal effort).
 
