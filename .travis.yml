@@ -1,0 +1,22 @@
+language: go
+sudo: false
+matrix:
+  include:
+  - os: linux
+    go: 1.10.x
+    env:
+    - TARGET=linux
+    - ARCH=amd64
+notifications:
+  email: false
+script:
+- make release
+deploy:
+  provider: releases
+  api_key:
+    secure: 
+  file: concourse-github-lambda.zip
+  skip_cleanup: true
+  on:
+    repo: TeliaSoneraNorge/concourse-github-lambda
+    tags: true
