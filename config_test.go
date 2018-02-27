@@ -2,7 +2,7 @@ package main_test
 
 import (
 	"encoding/json"
-	pkg "github.com/itsdalmo/concourse-github-credentials"
+	pkg "github.com/TeliaSoneraNorge/concourse-github-lambda"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
