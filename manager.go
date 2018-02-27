@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -113,7 +112,6 @@ func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey st
 		})
 	}()
 	privateKey = aws.StringValue(res.KeyMaterial)
-	fmt.Println(privateKey)
 
 	// Parse the private key
 	block, _ := pem.Decode([]byte(privateKey))
