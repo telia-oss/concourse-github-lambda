@@ -2,7 +2,7 @@
 # Resources
 # ------------------------------------------------------------------------------
 resource "aws_cloudwatch_event_rule" "main" {
-  name                = "${var.prefix}-github-cron-trigger"
+  name                = "${var.prefix}-github-${substr(md5(var.team_config), 0, 7)}"
   description         = "Github Lambda team configuration and trigger."
   schedule_expression = "rate(7 days)"
 }
