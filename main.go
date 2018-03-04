@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
+	"log"
 	"time"
 )
 
@@ -54,7 +55,8 @@ func Handler(team Team) error {
 
 		keyTitle, err := NewPath(team.Name, repository, command.Title).String()
 		if err != nil {
-			return errors.Wrap(err, "failed to parse github key title")
+			log.Printf("failed to parse github key title: %s", err)
+			continue
 		}
 
 		// Look for existing keys for the team
@@ -68,28 +70,33 @@ func Handler(team Team) error {
 		// Generate a new key pair
 		private, public, err := manager.GenerateKeyPair(keyTitle)
 		if err != nil {
-			return errors.Wrap(err, "failed to generate key pair")
+			log.Printf("failed to generate key pair: %s", err)
+			continue
 		}
 
 		// Write the new public key to Github
 		if _, err = manager.CreateKey(repository, keyTitle, public); err != nil {
-			return errors.Wrap(err, "failed to create key on github")
+			log.Printf("failed to create key on github: %s", err)
+			continue
 		}
 
 		// Write the new private key to SSM
 		secretPath, err := NewPath(team.Name, repository, command.Path).String()
 		if err != nil {
-			return errors.Wrap(err, "failed to parse ssm secret path")
+			log.Printf("failed to parse ssm secret path: %s", err)
+			continue
 		}
 		if err = manager.WriteSecret(secretPath, private, team.KeyID); err != nil {
-			return errors.Wrap(err, "failed to write private key to ssm")
+			log.Printf("failed to write private key to ssm: %s", err)
+			continue
 		}
 
 		// Sleep before deleting old key (in case someone has just fetched the old key)
 		if oldKey != nil {
 			time.Sleep(time.Second * 1)
 			if err = manager.DeleteKey(repository, int(*oldKey.ID)); err != nil {
-				return errors.Wrapf(err, "failed to delete old key: %s", *oldKey.ID)
+				log.Printf("failed to delete old key: %d: %s", *oldKey.ID, err)
+				continue
 			}
 		}
 	}
