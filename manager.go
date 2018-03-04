@@ -51,8 +51,8 @@ func NewManager(sess *session.Session, region, owner, token string) *Manager {
 }
 
 // ListKeys for a repository.
-func (m *Manager) ListKeys(repository string) ([]*github.Key, error) {
-	keys, _, err := m.repoClient.ListKeys(m.ctx, m.owner, repository, nil)
+func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
+	keys, _, err := m.repoClient.ListKeys(m.ctx, m.owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,16 +60,16 @@ func (m *Manager) ListKeys(repository string) ([]*github.Key, error) {
 }
 
 // CreateKey for a repository.
-func (m *Manager) CreateKey(repository, title, publicKey string) (*github.Key, error) {
+func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*github.Key, error) {
 	input := &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
 		Title:    github.String(title),
-		ReadOnly: github.Bool(true),
+		ReadOnly: github.Bool(repository.ReadOnly),
 	}
 
-	key, _, err := m.repoClient.CreateKey(m.ctx, m.owner, repository, input)
+	key, _, err := m.repoClient.CreateKey(m.ctx, m.owner, repository.Name, input)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func (m *Manager) CreateKey(repository, title, publicKey string) (*github.Key, e
 }
 
 // DeleteKey for a repository.
-func (m *Manager) DeleteKey(repository string, id int) error {
-	_, err := m.repoClient.DeleteKey(m.ctx, m.owner, repository, id)
+func (m *Manager) DeleteKey(repository Repository, id int) error {
+	_, err := m.repoClient.DeleteKey(m.ctx, m.owner, repository.Name, id)
 	return err
 }
 

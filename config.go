@@ -5,18 +5,24 @@ import (
 	"text/template"
 )
 
+// Repository represents the configuration of a repository.
+type Repository struct {
+	Name     string `json:"name"`
+	ReadOnly bool   `json:"readOnly"`
+}
+
 // Team represents the configuration for a single CI/CD team.
 type Team struct {
-	Name         string   `json:"name"`
-	KeyID        string   `json:"keyId"`
-	Repositories []string `json:"repositories"`
+	Name         string       `json:"name"`
+	KeyID        string       `json:"keyId"`
+	Repositories []Repository `json:"repositories"`
 }
 
 // NewPath a new secret path...
-func NewPath(team, repository, template string) *Path {
+func NewPath(team string, repository Repository, template string) *Path {
 	return &Path{
 		Team:       team,
-		Repository: repository,
+		Repository: repository.Name,
 		Template:   template,
 	}
 }

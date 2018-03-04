@@ -14,8 +14,14 @@ func TestConfig(t *testing.T) {
     "name": "team",
     "keyId": "key",
     "repositories": [
-        "repo1",
-        "repo2"
+        {
+            "name": "repo1",
+            "readOnly": true
+        },
+        {
+            "name": "repo2",
+            "readOnly": false
+        }
     ]
 }
 `)
@@ -24,9 +30,15 @@ func TestConfig(t *testing.T) {
 		expected := pkg.Team{
 			Name:  "team",
 			KeyID: "key",
-			Repositories: []string{
-				"repo1",
-				"repo2",
+			Repositories: []pkg.Repository{
+				{
+					Name:     "repo1",
+					ReadOnly: true,
+				},
+				{
+					Name:     "repo2",
+					ReadOnly: false,
+				},
 			},
 		}
 
@@ -41,7 +53,10 @@ func TestConfig(t *testing.T) {
 func TestSecretPath(t *testing.T) {
 	var (
 		team       = "TEAM"
-		repository = "REPOSITORY"
+		repository = pkg.Repository{
+			Name:     "REPOSITORY",
+			ReadOnly: true,
+		}
 	)
 
 	t.Run("Secret template works as intended", func(t *testing.T) {

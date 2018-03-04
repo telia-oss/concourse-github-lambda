@@ -8,7 +8,7 @@ module "github-lambda" {
   source = "./modules/lambda"
 
   prefix        = "github-lambda"
-  zip_file      = "../main.zip"
+  zip_file      = "../concourse-github-lambda.zip"
   ssm_prefix    = "concourse"
   github_prefix = "concourse"
   github_owner  = "itsdalmo"
@@ -33,7 +33,10 @@ module "github-lambda-trigger" {
   "name": "example-team",
   "keyId": "",
   "repositories": [
-    "go-hooks"
+    {
+      "name": "go-hooks",
+      "readOnly": true
+    }
   ]
 }
 EOF
