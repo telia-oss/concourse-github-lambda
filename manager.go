@@ -66,7 +66,7 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 		Key:      github.String(publicKey),
 		URL:      nil,
 		Title:    github.String(title),
-		ReadOnly: github.Bool(repository.ReadOnly),
+		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
 	key, _, err := m.repoClient.CreateKey(m.ctx, m.owner, repository.Name, input)

@@ -1,14 +1,33 @@
 package main
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 )
 
+// BooleanString because terraform has their own booleans.
+type BooleanString bool
+
+// UnmarshalJSON for terraform booleans..
+func (b *BooleanString) UnmarshalJSON(data []byte) error {
+	d, err := strconv.Unquote(string(data))
+	if err != nil {
+		return fmt.Errorf("failed to unquote: %s", err)
+	}
+	v, err := strconv.ParseBool(d)
+	if err != nil {
+		return fmt.Errorf("failed to parse bool: %s", err)
+	}
+	*b = BooleanString(v)
+	return nil
+}
+
 // Repository represents the configuration of a repository.
 type Repository struct {
-	Name     string `json:"name"`
-	ReadOnly bool   `json:"readOnly"`
+	Name     string        `json:"name"`
+	ReadOnly BooleanString `json:"readOnly"`
 }
 
 // Team represents the configuration for a single CI/CD team.

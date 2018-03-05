@@ -16,11 +16,11 @@ func TestConfig(t *testing.T) {
     "repositories": [
         {
             "name": "repo1",
-            "readOnly": true
+            "readOnly": "true"
         },
         {
             "name": "repo2",
-            "readOnly": false
+            "readOnly": "0"
         }
     ]
 }
@@ -33,11 +33,11 @@ func TestConfig(t *testing.T) {
 			Repositories: []pkg.Repository{
 				{
 					Name:     "repo1",
-					ReadOnly: true,
+					ReadOnly: pkg.BooleanString(true),
 				},
 				{
 					Name:     "repo2",
-					ReadOnly: false,
+					ReadOnly: pkg.BooleanString(false),
 				},
 			},
 		}

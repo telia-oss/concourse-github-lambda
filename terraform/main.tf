@@ -35,7 +35,7 @@ module "github-lambda-trigger" {
   "repositories": [
     {
       "name": "go-hooks",
-      "readOnly": true
+      "readOnly": "true"
     }
   ]
 }
