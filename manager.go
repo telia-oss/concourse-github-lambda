@@ -4,55 +4,84 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"net/http"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 )
 
-// RepositoriesService interface
-type RepositoriesService interface {
-	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
-	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
-	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
-}
-
 // Manager handles API calls to AWS.
 type Manager struct {
-	repoClient RepositoriesService
-	ssmClient  ssmiface.SSMAPI
-	ec2Client  ec2iface.EC2API
-	region     string
-	owner      string
-	ctx        context.Context
+	githubClient *github.Client
+	githubOwner  string
+	ssmClient    ssmiface.SSMAPI
+	ec2Client    ec2iface.EC2API
 }
 
-// NewManager creates a new manager from a session, region and Github access token.
-func NewManager(sess *session.Session, region, owner, token string) *Manager {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
-
-	config := &aws.Config{Region: aws.String(region)}
-	return &Manager{
-		repoClient: github.NewClient(tc).Repositories,
-		ssmClient:  ssm.New(sess, config),
-		ec2Client:  ec2.New(sess, config),
-		region:     region,
-		owner:      owner,
-		ctx:        context.Background(),
+// NewManager creates a new manager for handling requests to AWS and Github.
+func NewManager(region string, integrationID int, privateKey string) (*Manager, error) {
+	// Create a client to interact with the Github App endpoints
+	tr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, integrationID, []byte(privateKey))
+	if err != nil {
+		return nil, err
 	}
+	app := github.NewClient(&http.Client{Transport: tr})
+
+	// List installations and make sure we (only) have 1 (private app)
+	installations, _, err := app.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(installations) != 1 {
+		switch len(installations) {
+		case 0:
+			return nil, errors.New("application has zero installations")
+		default:
+			return nil, errors.New("application has multiple installations")
+		}
+	}
+
+	// Get an installation token and create a new Github Client.
+	token, _, err := app.Apps.CreateInstallationToken(context.TODO(), *installations[0].ID)
+	tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token.GetToken()},
+	))
+
+	// Create AWS session and config
+	awsSession := session.Must(session.NewSession())
+	awsConfig := &aws.Config{Region: aws.String(region)}
+
+	return &Manager{
+		githubClient: github.NewClient(tc),
+		githubOwner:  *installations[0].Account.Login,
+		ssmClient:    ssm.New(awsSession, awsConfig),
+		ec2Client:    ec2.New(awsSession, awsConfig),
+	}, nil
+}
+
+// ListRepositories for an installation.
+func (m *Manager) ListRepositories() ([]*github.Repository, error) {
+	// TODO: Paginate the response
+	repos, _, err := m.githubClient.Apps.ListRepos(context.TODO(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // ListKeys for a repository.
-func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.repoClient.ListKeys(m.ctx, m.owner, repository.Name, nil)
+func (m *Manager) ListKeys(repository string) ([]*github.Key, error) {
+	// TODO: Paginate the response
+	keys, _, err := m.githubClient.Repositories.ListKeys(context.TODO(), m.githubOwner, repository, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,16 +89,16 @@ func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
 }
 
 // CreateKey for a repository.
-func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*github.Key, error) {
+func (m *Manager) CreateKey(repository, title, publicKey string) (*github.Key, error) {
 	input := &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
 		URL:      nil,
 		Title:    github.String(title),
-		ReadOnly: github.Bool(bool(repository.ReadOnly)),
+		ReadOnly: github.Bool(false),
 	}
 
-	key, _, err := m.repoClient.CreateKey(m.ctx, m.owner, repository.Name, input)
+	key, _, err := m.githubClient.Repositories.CreateKey(context.TODO(), m.githubOwner, repository, input)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +106,8 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 }
 
 // DeleteKey for a repository.
-func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.repoClient.DeleteKey(m.ctx, m.owner, repository.Name, id)
+func (m *Manager) DeleteKey(repository string, id int64) error {
+	_, err := m.githubClient.Repositories.DeleteKey(context.TODO(), m.githubOwner, repository, int(id))
 	return err
 }
 

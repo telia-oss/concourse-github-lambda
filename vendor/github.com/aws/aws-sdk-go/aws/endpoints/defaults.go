@@ -45,7 +45,9 @@ const (
 
 // Service identifiers
 const (
+	A4bServiceID                          = "a4b"                          // A4b.
 	AcmServiceID                          = "acm"                          // Acm.
+	AcmPcaServiceID                       = "acm-pca"                      // AcmPca.
 	ApiPricingServiceID                   = "api.pricing"                  // ApiPricing.
 	ApigatewayServiceID                   = "apigateway"                   // Apigateway.
 	ApplicationAutoscalingServiceID       = "application-autoscaling"      // ApplicationAutoscaling.
@@ -55,6 +57,8 @@ const (
 	AutoscalingPlansServiceID             = "autoscaling-plans"            // AutoscalingPlans.
 	BatchServiceID                        = "batch"                        // Batch.
 	BudgetsServiceID                      = "budgets"                      // Budgets.
+	CeServiceID                           = "ce"                           // Ce.
+	Cloud9ServiceID                       = "cloud9"                       // Cloud9.
 	ClouddirectoryServiceID               = "clouddirectory"               // Clouddirectory.
 	CloudformationServiceID               = "cloudformation"               // Cloudformation.
 	CloudfrontServiceID                   = "cloudfront"                   // Cloudfront.
@@ -70,6 +74,7 @@ const (
 	CognitoIdentityServiceID              = "cognito-identity"             // CognitoIdentity.
 	CognitoIdpServiceID                   = "cognito-idp"                  // CognitoIdp.
 	CognitoSyncServiceID                  = "cognito-sync"                 // CognitoSync.
+	ComprehendServiceID                   = "comprehend"                   // Comprehend.
 	ConfigServiceID                       = "config"                       // Config.
 	CurServiceID                          = "cur"                          // Cur.
 	DatapipelineServiceID                 = "datapipeline"                 // Datapipeline.
@@ -95,10 +100,12 @@ const (
 	EsServiceID                           = "es"                           // Es.
 	EventsServiceID                       = "events"                       // Events.
 	FirehoseServiceID                     = "firehose"                     // Firehose.
+	FmsServiceID                          = "fms"                          // Fms.
 	GameliftServiceID                     = "gamelift"                     // Gamelift.
 	GlacierServiceID                      = "glacier"                      // Glacier.
 	GlueServiceID                         = "glue"                         // Glue.
 	GreengrassServiceID                   = "greengrass"                   // Greengrass.
+	GuarddutyServiceID                    = "guardduty"                    // Guardduty.
 	HealthServiceID                       = "health"                       // Health.
 	IamServiceID                          = "iam"                          // Iam.
 	ImportexportServiceID                 = "importexport"                 // Importexport.
@@ -116,6 +123,7 @@ const (
 	MediaconvertServiceID                 = "mediaconvert"                 // Mediaconvert.
 	MedialiveServiceID                    = "medialive"                    // Medialive.
 	MediapackageServiceID                 = "mediapackage"                 // Mediapackage.
+	MediastoreServiceID                   = "mediastore"                   // Mediastore.
 	MeteringMarketplaceServiceID          = "metering.marketplace"         // MeteringMarketplace.
 	MghServiceID                          = "mgh"                          // Mgh.
 	MobileanalyticsServiceID              = "mobileanalytics"              // Mobileanalytics.
@@ -130,11 +138,16 @@ const (
 	RdsServiceID                          = "rds"                          // Rds.
 	RedshiftServiceID                     = "redshift"                     // Redshift.
 	RekognitionServiceID                  = "rekognition"                  // Rekognition.
+	ResourceGroupsServiceID               = "resource-groups"              // ResourceGroups.
 	Route53ServiceID                      = "route53"                      // Route53.
 	Route53domainsServiceID               = "route53domains"               // Route53domains.
 	RuntimeLexServiceID                   = "runtime.lex"                  // RuntimeLex.
+	RuntimeSagemakerServiceID             = "runtime.sagemaker"            // RuntimeSagemaker.
 	S3ServiceID                           = "s3"                           // S3.
+	SagemakerServiceID                    = "sagemaker"                    // Sagemaker.
 	SdbServiceID                          = "sdb"                          // Sdb.
+	SecretsmanagerServiceID               = "secretsmanager"               // Secretsmanager.
+	ServerlessrepoServiceID               = "serverlessrepo"               // Serverlessrepo.
 	ServicecatalogServiceID               = "servicecatalog"               // Servicecatalog.
 	ServicediscoveryServiceID             = "servicediscovery"             // Servicediscovery.
 	ShieldServiceID                       = "shield"                       // Shield.
@@ -150,9 +163,11 @@ const (
 	SupportServiceID                      = "support"                      // Support.
 	SwfServiceID                          = "swf"                          // Swf.
 	TaggingServiceID                      = "tagging"                      // Tagging.
+	TranslateServiceID                    = "translate"                    // Translate.
 	WafServiceID                          = "waf"                          // Waf.
 	WafRegionalServiceID                  = "waf-regional"                 // WafRegional.
 	WorkdocsServiceID                     = "workdocs"                     // Workdocs.
+	WorkmailServiceID                     = "workmail"                     // Workmail.
 	WorkspacesServiceID                   = "workspaces"                   // Workspaces.
 	XrayServiceID                         = "xray"                         // Xray.
 )
@@ -250,6 +265,12 @@ var awsPartition = partition{
 		},
 	},
 	Services: services{
+		"a4b": service{
+
+			Endpoints: endpoints{
+				"us-east-1": endpoint{},
+			},
+		},
 		"acm": service{
 
 			Endpoints: endpoints{
@@ -267,6 +288,22 @@ var awsPartition = partition{
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
+				"us-west-2":      endpoint{},
+			},
+		},
+		"acm-pca": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
 		},
@@ -396,13 +433,17 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
 		},
@@ -417,6 +458,29 @@ var awsPartition = partition{
 						Region: "us-east-1",
 					},
 				},
+			},
+		},
+		"ce": service{
+			PartitionEndpoint: "aws-global",
+			IsRegionalized:    boxedFalse,
+
+			Endpoints: endpoints{
+				"aws-global": endpoint{
+					Hostname: "ce.us-east-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-east-1",
+					},
+				},
+			},
+		},
+		"cloud9": service{
+
+			Endpoints: endpoints{
+				"ap-southeast-1": endpoint{},
+				"eu-west-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-2":      endpoint{},
 			},
 		},
 		"clouddirectory": service{
@@ -541,16 +605,43 @@ var awsPartition = partition{
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
 				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
+				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
-				"us-east-2":      endpoint{},
-				"us-west-1":      endpoint{},
-				"us-west-2":      endpoint{},
+				"us-east-1-fips": endpoint{
+					Hostname: "codebuild-fips.us-east-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-east-1",
+					},
+				},
+				"us-east-2": endpoint{},
+				"us-east-2-fips": endpoint{
+					Hostname: "codebuild-fips.us-east-2.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-east-2",
+					},
+				},
+				"us-west-1": endpoint{},
+				"us-west-1-fips": endpoint{
+					Hostname: "codebuild-fips.us-west-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-west-1",
+					},
+				},
+				"us-west-2": endpoint{},
+				"us-west-2-fips": endpoint{
+					Hostname: "codebuild-fips.us-west-2.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-west-2",
+					},
+				},
 			},
 		},
 		"codecommit": service{
@@ -565,6 +656,7 @@ var awsPartition = partition{
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
 				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
@@ -677,6 +769,17 @@ var awsPartition = partition{
 				"us-west-2":      endpoint{},
 			},
 		},
+		"comprehend": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
+				"us-east-1": endpoint{},
+				"us-east-2": endpoint{},
+				"us-west-2": endpoint{},
+			},
+		},
 		"config": service{
 
 			Endpoints: endpoints{
@@ -723,6 +826,7 @@ var awsPartition = partition{
 				"eu-west-1":      endpoint{},
 				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
@@ -948,6 +1052,7 @@ var awsPartition = partition{
 				"eu-west-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
 		},
@@ -1085,6 +1190,15 @@ var awsPartition = partition{
 				"us-west-2":      endpoint{},
 			},
 		},
+		"fms": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"us-east-1": endpoint{},
+				"us-west-2": endpoint{},
+			},
+		},
 		"gamelift": service{
 
 			Endpoints: endpoints{
@@ -1129,7 +1243,13 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
+				"eu-west-2":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
 				"us-west-2":      endpoint{},
@@ -1145,6 +1265,29 @@ var awsPartition = partition{
 				"ap-southeast-2": endpoint{},
 				"eu-central-1":   endpoint{},
 				"us-east-1":      endpoint{},
+				"us-west-2":      endpoint{},
+			},
+		},
+		"guardduty": service{
+			IsRegionalized: boxedTrue,
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
+				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
+				"sa-east-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
 		},
@@ -1206,6 +1349,7 @@ var awsPartition = partition{
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
 				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"eu-central-1":   endpoint{},
@@ -1298,12 +1442,15 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
 				"us-west-2":      endpoint{},
@@ -1346,12 +1493,17 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
+				"eu-west-2":      endpoint{},
+				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
@@ -1360,6 +1512,7 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"eu-west-1":      endpoint{},
@@ -1371,11 +1524,24 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-3":      endpoint{},
+				"sa-east-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-west-2":      endpoint{},
+			},
+		},
+		"mediastore": service{
+
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
@@ -1396,6 +1562,7 @@ var awsPartition = partition{
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
 				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
@@ -1422,7 +1589,9 @@ var awsPartition = partition{
 				},
 			},
 			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
 				"us-east-1": endpoint{},
+				"us-west-2": endpoint{},
 			},
 		},
 		"monitoring": service{
@@ -1465,6 +1634,7 @@ var awsPartition = partition{
 				"ap-south-1":     endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
@@ -1479,9 +1649,15 @@ var awsPartition = partition{
 		"opsworks-cm": service{
 
 			Endpoints: endpoints{
-				"eu-west-1": endpoint{},
-				"us-east-1": endpoint{},
-				"us-west-2": endpoint{},
+				"ap-northeast-1": endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
+				"us-west-2":      endpoint{},
 			},
 		},
 		"organizations": service{
@@ -1572,10 +1748,31 @@ var awsPartition = partition{
 		"rekognition": service{
 
 			Endpoints: endpoints{
-				"eu-west-1": endpoint{},
-				"us-east-1": endpoint{},
-				"us-east-2": endpoint{},
-				"us-west-2": endpoint{},
+				"ap-northeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"eu-west-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-2":      endpoint{},
+			},
+		},
+		"resource-groups": service{
+
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
+				"eu-west-2":      endpoint{},
+				"sa-east-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
+				"us-west-2":      endpoint{},
 			},
 		},
 		"route53": service{
@@ -1606,6 +1803,16 @@ var awsPartition = partition{
 			Endpoints: endpoints{
 				"eu-west-1": endpoint{},
 				"us-east-1": endpoint{},
+				"us-west-2": endpoint{},
+			},
+		},
+		"runtime.sagemaker": service{
+
+			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
+				"us-east-1": endpoint{},
+				"us-east-2": endpoint{},
+				"us-west-2": endpoint{},
 			},
 		},
 		"s3": service{
@@ -1667,6 +1874,15 @@ var awsPartition = partition{
 				},
 			},
 		},
+		"sagemaker": service{
+
+			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
+				"us-east-1": endpoint{},
+				"us-east-2": endpoint{},
+				"us-west-2": endpoint{},
+			},
+		},
 		"sdb": service{
 			Defaults: endpoint{
 				Protocols:         []string{"http", "https"},
@@ -1683,6 +1899,74 @@ var awsPartition = partition{
 				},
 				"us-west-1": endpoint{},
 				"us-west-2": endpoint{},
+			},
+		},
+		"secretsmanager": service{
+
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
+				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
+				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
+				"eu-central-1":   endpoint{},
+				"eu-west-1":      endpoint{},
+				"eu-west-2":      endpoint{},
+				"sa-east-1":      endpoint{},
+				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
+				"us-west-2":      endpoint{},
+			},
+		},
+		"serverlessrepo": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"ap-northeast-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"ap-northeast-2": endpoint{
+					Protocols: []string{"https"},
+				},
+				"ap-south-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"ap-southeast-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"ap-southeast-2": endpoint{
+					Protocols: []string{"https"},
+				},
+				"ca-central-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"eu-central-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"eu-west-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"eu-west-2": endpoint{
+					Protocols: []string{"https"},
+				},
+				"sa-east-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"us-east-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"us-east-2": endpoint{
+					Protocols: []string{"https"},
+				},
+				"us-west-1": endpoint{
+					Protocols: []string{"https"},
+				},
+				"us-west-2": endpoint{
+					Protocols: []string{"https"},
+				},
 			},
 		},
 		"servicecatalog": service{
@@ -1730,12 +2014,14 @@ var awsPartition = partition{
 				"ap-northeast-1": endpoint{},
 				"ap-northeast-2": endpoint{},
 				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
 				"eu-west-3":      endpoint{},
+				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
@@ -1747,6 +2033,7 @@ var awsPartition = partition{
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
 				"ap-south-1":     endpoint{},
+				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
@@ -1798,6 +2085,10 @@ var awsPartition = partition{
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
 				"eu-west-3":      endpoint{},
+				"fips-us-east-1": endpoint{},
+				"fips-us-east-2": endpoint{},
+				"fips-us-west-1": endpoint{},
+				"fips-us-west-2": endpoint{},
 				"sa-east-1":      endpoint{},
 				"us-east-1": endpoint{
 					SSLCommonName: "queue.{dnsSuffix}",
@@ -1831,6 +2122,7 @@ var awsPartition = partition{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
 				"ca-central-1":   endpoint{},
@@ -1839,6 +2131,7 @@ var awsPartition = partition{
 				"eu-west-2":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
+				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
 		},
@@ -1988,11 +2281,23 @@ var awsPartition = partition{
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"eu-west-3":      endpoint{},
 				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
+			},
+		},
+		"translate": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
+				"us-east-1": endpoint{},
+				"us-east-2": endpoint{},
+				"us-west-2": endpoint{},
 			},
 		},
 		"waf": service{
@@ -2016,6 +2321,7 @@ var awsPartition = partition{
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"us-east-1":      endpoint{},
+				"us-east-2":      endpoint{},
 				"us-west-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
@@ -2031,15 +2337,28 @@ var awsPartition = partition{
 				"us-west-2":      endpoint{},
 			},
 		},
+		"workmail": service{
+			Defaults: endpoint{
+				Protocols: []string{"https"},
+			},
+			Endpoints: endpoints{
+				"eu-west-1": endpoint{},
+				"us-east-1": endpoint{},
+				"us-west-2": endpoint{},
+			},
+		},
 		"workspaces": service{
 
 			Endpoints: endpoints{
 				"ap-northeast-1": endpoint{},
+				"ap-northeast-2": endpoint{},
 				"ap-southeast-1": endpoint{},
 				"ap-southeast-2": endpoint{},
+				"ca-central-1":   endpoint{},
 				"eu-central-1":   endpoint{},
 				"eu-west-1":      endpoint{},
 				"eu-west-2":      endpoint{},
+				"sa-east-1":      endpoint{},
 				"us-east-1":      endpoint{},
 				"us-west-2":      endpoint{},
 			},
@@ -2338,7 +2657,8 @@ var awscnPartition = partition{
 		"sms": service{
 
 			Endpoints: endpoints{
-				"cn-north-1": endpoint{},
+				"cn-north-1":     endpoint{},
+				"cn-northwest-1": endpoint{},
 			},
 		},
 		"snowball": service{
@@ -2408,7 +2728,8 @@ var awscnPartition = partition{
 		"tagging": service{
 
 			Endpoints: endpoints{
-				"cn-north-1": endpoint{},
+				"cn-north-1":     endpoint{},
+				"cn-northwest-1": endpoint{},
 			},
 		},
 	},
@@ -2468,6 +2789,16 @@ var awsusgovPartition = partition{
 		},
 		"cloudhsm": service{
 
+			Endpoints: endpoints{
+				"us-gov-west-1": endpoint{},
+			},
+		},
+		"cloudhsmv2": service{
+			Defaults: endpoint{
+				CredentialScope: credentialScope{
+					Service: "cloudhsm",
+				},
+			},
 			Endpoints: endpoints{
 				"us-gov-west-1": endpoint{},
 			},
@@ -2628,7 +2959,23 @@ var awsusgovPartition = partition{
 				"us-gov-west-1": endpoint{},
 			},
 		},
+		"metering.marketplace": service{
+			Defaults: endpoint{
+				CredentialScope: credentialScope{
+					Service: "aws-marketplace",
+				},
+			},
+			Endpoints: endpoints{
+				"us-gov-west-1": endpoint{},
+			},
+		},
 		"monitoring": service{
+
+			Endpoints: endpoints{
+				"us-gov-west-1": endpoint{},
+			},
+		},
+		"polly": service{
 
 			Endpoints: endpoints{
 				"us-gov-west-1": endpoint{},
@@ -2704,6 +3051,12 @@ var awsusgovPartition = partition{
 				"us-gov-west-1": endpoint{},
 			},
 		},
+		"storagegateway": service{
+
+			Endpoints: endpoints{
+				"us-gov-west-1": endpoint{},
+			},
+		},
 		"streams.dynamodb": service{
 			Defaults: endpoint{
 				CredentialScope: credentialScope{
@@ -2727,6 +3080,12 @@ var awsusgovPartition = partition{
 			},
 		},
 		"swf": service{
+
+			Endpoints: endpoints{
+				"us-gov-west-1": endpoint{},
+			},
+		},
+		"tagging": service{
 
 			Endpoints: endpoints{
 				"us-gov-west-1": endpoint{},
