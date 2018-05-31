@@ -2,3 +2,4 @@
 **/*.tfstate*
 main
 concourse-github-lambda.zip
+test.sh
