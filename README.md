@@ -1,8 +1,8 @@
 ## concourse-github-lambda
 
-[![Build Status](https://travis-ci.org/TeliaSoneraNorge/concourse-github-lambda.svg?branch=master)](https://travis-ci.org/TeliaSoneraNorge/concourse-github-lambda)
+[![Build Status](https://travis-ci.org/telia-oss/concourse-github-lambda.svg?branch=master)](https://travis-ci.org/telia-oss/concourse-github-lambda)
 
-Lambda function to rotate Github deploy keys used by Concourse teams. See 
+Lambda function to rotate Github deploy keys used by Concourse teams. See
 the terraform subdirectory for an example that should work (with minimal effort).
 
 ### Why?
@@ -51,5 +51,5 @@ Example configuration for a Team (which is then passed as input in the CloudWatc
 ```
 
 When the function is triggered with the above input, it will create
-a deploy key for `TeliaSoneraNorge/concourse-github-lambda` and write
+a deploy key for `telia-oss/concourse-github-lambda` and write
 the private key to `/concourse/example-team/concourse-github-lambda-deploy-key`.
