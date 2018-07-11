@@ -10,27 +10,30 @@ import (
 // New lambda handler with the provided settings.
 func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.Logger) func(Team) error {
 	return func(team Team) error {
-		log := logger.WithFields(logrus.Fields{"team": team.Name})
-
 		// Loop through teams and assume roles/write credentials for
 		// all accounts controlled by the team.
 		for _, repository := range team.Repositories {
+			log := logger.WithFields(logrus.Fields{
+				"team":       team.Name,
+				"repository": repository.Name,
+				"owner":      repository.Owner,
+			})
 			path, err := NewTemplate(team.Name, repository.Name, secretTemplate).String()
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to parse secret path: %s", err)
+				log.Warnf("failed to parse secret path: %s", err)
 				continue
 			}
 
 			title, err := NewTemplate(team.Name, repository.Name, titleTemplate).String()
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to parse github title: %s", err)
+				log.Warnf("failed to parse github title: %s", err)
 				continue
 			}
 
 			// Look for existing keys for the team
 			keys, err := manager.ListKeys(repository)
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to list github keys: %s", err)
+				log.Warnf("failed to list github keys: %s", err)
 				continue
 			}
 
@@ -44,19 +47,19 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 			// Generate a new key pair
 			private, public, err := manager.GenerateKeyPair(title)
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to generate new key pair: %s", err)
+				log.Warnf("failed to generate new key pair: %s", err)
 				continue
 			}
 
 			// Write the new public key to Github
-			if _, err = manager.CreateKey(repository, path, public); err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to create key on github: %s", err)
+			if err = manager.CreateKey(repository, path, public); err != nil {
+				log.Warnf("failed to create key on github: %s", err)
 				continue
 			}
 
 			// Write the private key to Secrets manager
 			if err := manager.WriteSecret(private, path); err != nil {
-				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to write secret key: %s", err)
+				log.Warnf("failed to write secret key: %s", err)
 				continue
 			}
 
@@ -64,7 +67,7 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 			if oldKey != nil {
 				time.Sleep(time.Second * 1)
 				if err = manager.DeleteKey(repository, int(*oldKey.ID)); err != nil {
-					log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to delete old github key: %d: %s", *oldKey.ID, err)
+					log.Warnf("failed to delete old github key: %d: %s", *oldKey.ID, err)
 					continue
 				}
 			}

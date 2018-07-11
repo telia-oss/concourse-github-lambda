@@ -58,6 +58,12 @@
   version = "v1.32.0"
 
 [[projects]]
+  name = "github.com/golang/mock"
+  packages = ["gomock"]
+  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
@@ -88,7 +94,10 @@
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
-  packages = ["."]
+  packages = [
+    ".",
+    "hooks/test"
+  ]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
   version = "v1.0.5"
 
@@ -150,6 +159,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ec0a3d76713ad3f7f38e2002f3f33e0b299bb133027e88d850b0c6f546c1a18"
+  inputs-digest = "51eea13b3ee00b30087698d029e8ab33e022c1c26c533b6ad705198b46ffb48a"
   solver-name = "gps-cdcl"
   solver-version = 1

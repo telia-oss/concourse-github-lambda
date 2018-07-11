@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -71,7 +72,7 @@ func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
 }
 
 // CreateKey for a repository.
-func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*github.Key, error) {
+func (m *Manager) CreateKey(repository Repository, title, publicKey string) error {
 	input := &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
@@ -80,11 +81,8 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	key, _, err := m.githubClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
-	if err != nil {
-		return nil, err
-	}
-	return key, nil
+	_, _, err := m.githubClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
+	return err
 }
 
 // DeleteKey for a repository.
@@ -97,7 +95,6 @@ func (m *Manager) DeleteKey(repository Repository, id int) error {
 func (m *Manager) WriteSecret(name, secret string) error {
 	var err error
 
-	// Fewer API calls to naively try to create it and handle the error.
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
 		Name:        aws.String(name),
 		Description: aws.String("Lambda created secret for Concourse."),
@@ -132,6 +129,7 @@ func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey st
 
 	// Remember to clean up temporary key when done
 	defer func() {
+		// TODO: Don't discard error, handle it somehow.
 		m.ec2Client.DeleteKeyPair(&ec2.DeleteKeyPairInput{
 			KeyName: aws.String(title),
 		})
@@ -140,8 +138,8 @@ func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey st
 
 	// Parse the private key
 	block, _ := pem.Decode([]byte(privateKey))
-	if err != nil {
-		return "", "", err
+	if block == nil {
+		return "", "", errors.New("failed to decode private key")
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
