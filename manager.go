@@ -39,13 +39,10 @@ type Manager struct {
 	githubClient  GithubManager
 	secretsClient SecretsManager
 	ec2Client     EC2Manager
-	region        string
-	owner         string
-	ctx           context.Context
 }
 
 // NewManager creates a new manager from a session, region and Github access token.
-func NewManager(sess *session.Session, region, owner, token string) *Manager {
+func NewManager(sess *session.Session, region, token string) *Manager {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
@@ -56,15 +53,17 @@ func NewManager(sess *session.Session, region, owner, token string) *Manager {
 		githubClient:  github.NewClient(tc).Repositories,
 		secretsClient: secretsmanager.New(sess, config),
 		ec2Client:     ec2.New(sess, config),
-		region:        region,
-		owner:         owner,
-		ctx:           context.Background(),
 	}
+}
+
+// NewTestManager ...
+func NewTestManager(g GithubManager, s SecretsManager, e EC2Manager) *Manager {
+	return &Manager{githubClient: g, secretsClient: s, ec2Client: e}
 }
 
 // ListKeys for a repository.
 func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.githubClient.ListKeys(m.ctx, m.owner, repository.Name, nil)
+	keys, _, err := m.githubClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	key, _, err := m.githubClient.CreateKey(m.ctx, m.owner, repository.Name, input)
+	key, _, err := m.githubClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +89,7 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 
 // DeleteKey for a repository.
 func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.githubClient.DeleteKey(m.ctx, m.owner, repository.Name, id)
+	_, err := m.githubClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
 	return err
 }
 
