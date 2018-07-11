@@ -22,7 +22,8 @@ func TestConfig(t *testing.T) {
     "name": "team",
     "repositories": [
         {
-            "name": "repo1",
+			"name": "repo1",
+			"owner": "telia-oss",
             "readOnly": "true"
         }
     ]
@@ -33,6 +34,7 @@ func TestConfig(t *testing.T) {
 				Repositories: []handler.Repository{
 					{
 						Name:     "repo1",
+						Owner:    "telia-oss",
 						ReadOnly: handler.BooleanString(true),
 					},
 				},
@@ -47,6 +49,7 @@ func TestConfig(t *testing.T) {
     "repositories": [
         {
             "name": "repo2",
+			"owner": "telia-oss",
             "readOnly": "0"
         }
     ]
@@ -57,6 +60,7 @@ func TestConfig(t *testing.T) {
 				Repositories: []handler.Repository{
 					{
 						Name:     "repo2",
+						Owner:    "telia-oss",
 						ReadOnly: handler.BooleanString(false),
 					},
 				},

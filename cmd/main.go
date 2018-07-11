@@ -16,7 +16,6 @@ type Command struct {
 	Region string `long:"region" env:"REGION" description:"AWS region to use for API calls."`
 	Path   string `long:"secrets-manager-path" env:"SECRETS_MANAGER_PATH" default:"/concourse/{{.Team}}/{{.Account}}" description:"Path to use when writing to AWS Secrets manager."`
 	Title  string `long:"github-title" env:"GITHUB_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Template for Github title."`
-	Owner  string `long:"github-owner" env:"GITHUB_OWNER" description:"Organization or individual owner of the repositories."`
 	Token  string `long:"github-token" env:"GITHUB_TOKEN" description:"Access token which grants access to create deploy keys for the org."`
 }
 
@@ -24,9 +23,6 @@ type Command struct {
 func (c *Command) Validate() error {
 	if c.Region == "" {
 		return errors.New("missing required argument 'region'")
-	}
-	if c.Owner == "" {
-		return errors.New("missing required argument 'github-owner'")
 	}
 	if c.Token == "" {
 		return errors.New("missing required argument 'github-token'")
@@ -52,6 +48,6 @@ func main() {
 	logger := logrus.New()
 	logger.Formatter = &logrus.JSONFormatter{}
 
-	f := handler.New(handler.NewManager(sess, command.Region, command.Owner, command.Token), command.Path, command.Title, logger)
+	f := handler.New(handler.NewManager(sess, command.Region, command.Token), command.Path, command.Title, logger)
 	lambda.Start(f)
 }

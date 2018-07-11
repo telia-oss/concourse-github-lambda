@@ -27,6 +27,7 @@ func (b *BooleanString) UnmarshalJSON(data []byte) error {
 // Repository represents the configuration of a repository.
 type Repository struct {
 	Name     string        `json:"name"`
+	Owner    string        `json:"owner"`
 	ReadOnly BooleanString `json:"readOnly"`
 }
 
