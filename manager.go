@@ -1,9 +1,10 @@
-package main
+package handler
 
 import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
