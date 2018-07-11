@@ -33,27 +33,26 @@ type Repository struct {
 // Team represents the configuration for a single CI/CD team.
 type Team struct {
 	Name         string       `json:"name"`
-	KeyID        string       `json:"keyId"`
 	Repositories []Repository `json:"repositories"`
 }
 
-// NewPath a new secret path...
-func NewPath(team string, repository Repository, template string) *Path {
-	return &Path{
+// NewTemplate for github key title and secrets manager path.
+func NewTemplate(team, repository, template string) *Template {
+	return &Template{
 		Team:       team,
-		Repository: repository.Name,
+		Repository: repository,
 		Template:   template,
 	}
 }
 
-// Path represents the path used to write secrets into SSM.
-type Path struct {
+// Template ...
+type Template struct {
 	Team       string
 	Repository string
 	Template   string
 }
 
-func (p *Path) String() (string, error) {
+func (p *Template) String() (string, error) {
 	t, err := template.New("path").Option("missingkey=error").Parse(p.Template)
 	if err != nil {
 		return "", err

@@ -2,18 +2,24 @@ package handler_test
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	pkg "github.com/telia-oss/concourse-github-lambda"
+	"github.com/telia-oss/concourse-github-lambda"
 )
 
 func TestConfig(t *testing.T) {
-	input := strings.TrimSpace(`
+	tests := []struct {
+		description string
+		input       string
+		expected    handler.Team
+	}{
+		{
+			description: "Unmarshal works as intended",
+			input: strings.TrimSpace(`
 {
     "name": "team",
-    "keyId": "key",
     "repositories": [
         {
             "name": "repo1",
@@ -25,53 +31,79 @@ func TestConfig(t *testing.T) {
         }
     ]
 }
-`)
-
-	t.Run("Unmarshal works as intended", func(t *testing.T) {
-		expected := pkg.Team{
-			Name:  "team",
-			KeyID: "key",
-			Repositories: []pkg.Repository{
-				{
-					Name:     "repo1",
-					ReadOnly: pkg.BooleanString(true),
-				},
-				{
-					Name:     "repo2",
-					ReadOnly: pkg.BooleanString(false),
+`),
+			expected: handler.Team{
+				Name: "team",
+				Repositories: []handler.Repository{
+					{
+						Name:     "repo1",
+						ReadOnly: handler.BooleanString(true),
+					},
+					{
+						Name:     "repo2",
+						ReadOnly: handler.BooleanString(false),
+					},
 				},
 			},
-		}
+		},
+	}
 
-		var actual pkg.Team
-		err := json.Unmarshal([]byte(input), &actual)
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			var output handler.Team
+			err := json.Unmarshal([]byte(tc.input), &output)
 
-		assert.Nil(t, err)
-		assert.Equal(t, expected, actual)
-	})
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if got, want := output, tc.expected; !reflect.DeepEqual(got, want) {
+				t.Errorf("\ngot:\n%v\nwant:\n%v\n", got, want)
+			}
+		})
+	}
 }
 
-func TestSecretPath(t *testing.T) {
-	var (
-		team       = "TEAM"
-		repository = pkg.Repository{
-			Name:     "REPOSITORY",
-			ReadOnly: true,
-		}
-	)
+func TestTemplate(t *testing.T) {
+	tests := []struct {
+		description string
+		template    string
+		team        string
+		repository  string
+		expected    string
+		shouldError bool
+	}{
+		{
+			description: "template works as intended",
+			template:    "/concourse/{{.Team}}/{{.Repository}}",
+			team:        "TEAM",
+			repository:  "REPOSITORY",
+			shouldError: false,
+		},
+		{
+			description: "fails if the template expects more parameters",
+			template:    "/concourse/{{.Team}}/{{.Repository}}/{{.Something}}",
+			team:        "TEAM",
+			repository:  "REPOSITORY",
+			shouldError: true,
+		},
+	}
 
-	t.Run("Secret template works as intended", func(t *testing.T) {
-		template := "/concourse/{{.Team}}/{{.Repository}}"
-		expected := "/concourse/TEAM/REPOSITORY"
-		actual, err := pkg.NewPath(team, repository, template).String()
-		assert.Nil(t, err)
-		assert.Equal(t, expected, actual)
-	})
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			got, err := handler.NewTemplate(tc.team, tc.repository, tc.template).String()
 
-	t.Run("Fails if template expects additional parameters", func(t *testing.T) {
-		template := "/concourse/{{.Team}}/{{.Repository}}/{{.Something}}"
-		actual, err := pkg.NewPath(team, repository, template).String()
-		assert.NotNil(t, err)
-		assert.Equal(t, "", actual)
-	})
+			if tc.shouldError && err == nil {
+				t.Fatal("expected an error to occur")
+			}
+
+			if !tc.shouldError && err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if want := tc.expected; got != want {
+				t.Errorf("\ngot:\n%v\nwant:\n%v\n", got, want)
+			}
+		})
+	}
 }

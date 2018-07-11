@@ -15,15 +15,15 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 		// Loop through teams and assume roles/write credentials for
 		// all accounts controlled by the team.
 		for _, repository := range team.Repositories {
-			path, err := NewSecretPath(team.Name, repository.Name, secretTemplate).String()
+			path, err := NewTemplate(team.Name, repository.Name, secretTemplate).String()
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": account.Name}).Warnf("failed to parse secret path: %s", err)
+				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to parse secret path: %s", err)
 				continue
 			}
 
-			title, err := NewPath(team.Name, repository.Name, command.Path).String()
+			title, err := NewTemplate(team.Name, repository.Name, titleTemplate).String()
 			if err != nil {
-				log.WithFields(logrus.Fields{"repository": account.Name}).Warnf("failed to parse github title: %s", err)
+				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to parse github title: %s", err)
 				continue
 			}
 
@@ -50,13 +50,13 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 
 			// Write the new public key to Github
 			if _, err = manager.CreateKey(repository, path, public); err != nil {
-				log.WithFields(logrus.Fields{"repository": account.Name}).Warnf("failed to create key on github: %s", err)
+				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to create key on github: %s", err)
 				continue
 			}
 
 			// Write the private key to Secrets manager
 			if err := manager.WriteSecret(private, path); err != nil {
-				log.WithFields(logrus.Fields{"repository": account.Name}).Warnf("failed to write secret key: %s", err)
+				log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to write secret key: %s", err)
 				continue
 			}
 
@@ -64,7 +64,7 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 			if oldKey != nil {
 				time.Sleep(time.Second * 1)
 				if err = manager.DeleteKey(repository, int(*oldKey.ID)); err != nil {
-					log.WithFields(logrus.Fields{"repository": account.Name}).Warnf("failed to delete old github key: %d: %s", *oldKey.ID, err)
+					log.WithFields(logrus.Fields{"repository": repository.Name}).Warnf("failed to delete old github key: %d: %s", *oldKey.ID, err)
 					continue
 				}
 			}

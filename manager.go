@@ -84,11 +84,10 @@ func (m *Manager) DeleteKey(repository Repository, id int) error {
 }
 
 // WriteSecret to SSM.
-func (m *Manager) WriteSecret(name, value, key string) error {
+func (m *Manager) WriteSecret(name, value string) error {
 	input := &ssm.PutParameterInput{
 		Name:      aws.String(name),
 		Value:     aws.String(value),
-		KeyId:     aws.String(key),
 		Type:      aws.String("SecureString"),
 		Overwrite: aws.Bool(true),
 	}
