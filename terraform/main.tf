@@ -26,8 +26,9 @@ module "github-lambda" {
 module "github-lambda-trigger" {
   source = "./modules/trigger"
 
-  prefix = "example-team"
+  prefix     = "example-team"
   lambda_arn = "${module.github-lambda.function_arn}"
+
   team_config = <<EOF
 {
   "name": "example-team",
