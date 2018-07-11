@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
 	"github.com/telia-oss/concourse-github-lambda"
 )
 
