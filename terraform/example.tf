@@ -2,18 +2,14 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-data "aws_region" "current" {}
-
 module "github-lambda" {
   source = "./modules/lambda"
 
-  prefix        = "github-lambda"
-  zip_file      = "../concourse-github-lambda.zip"
-  ssm_prefix    = "concourse"
-  github_prefix = "concourse"
-  github_owner  = "itsdalmo"
-  github_token  = ""
-  region        = "${data.aws_region.current.name}"
+  name_prefix            = "github-lambda"
+  filename               = "../concourse-github-lambda.zip"
+  github_prefix          = "concourse"
+  github_token           = ""
+  secrets_manager_prefix = "concourse"
 
   tags {
     environment = "dev"
@@ -26,16 +22,16 @@ module "github-lambda" {
 module "github-lambda-trigger" {
   source = "./modules/trigger"
 
-  prefix     = "example-team"
-  lambda_arn = "${module.github-lambda.function_arn}"
+  name_prefix = "example-team"
+  lambda_arn  = "${module.github-lambda.function_arn}"
 
   team_config = <<EOF
 {
   "name": "example-team",
-  "keyId": "",
   "repositories": [
     {
       "name": "go-hooks",
+      "owner": "itsdalmo",
       "readOnly": "true"
     }
   ]

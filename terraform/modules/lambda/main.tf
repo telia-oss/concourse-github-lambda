@@ -6,26 +6,23 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 module "lambda" {
-  source = "github.com/TeliaSoneraNorge/divx-terraform-modules//lambda/function?ref=0.4.0"
+  source  = "telia-oss/lambda/aws"
+  version = "0.2.0"
 
-  prefix   = "${var.prefix}"
-  policy   = "${data.aws_iam_policy_document.lambda.json}"
-  zip_file = "${var.zip_file}"
-  handler  = "main"
-  runtime  = "go1.x"
+  name_prefix = "${var.name_prefix}"
+  filename    = "${var.filename}"
+  policy      = "${data.aws_iam_policy_document.lambda.json}"
+  handler     = "main"
+  runtime     = "go1.x"
 
-  variables {
-    REGION       = "${var.region}"
-    SSM_PATH     = "/${var.ssm_prefix}/{{.Team}}/{{.Repository}}-deploy-key"
-    GITHUB_TITLE = "${var.github_prefix}-{{.Team}}-deploy-key"
-    GITHUB_OWNER = "${var.github_owner}"
-    GITHUB_TOKEN = "${var.github_token}"
+  environment {
+    REGION               = "${data.aws_region.current.name}"
+    SECRETS_MANAGER_PATH = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Account}}"
+    GITHUB_TITLE         = "${var.github_prefix}-{{.Team}}-deploy-key"
+    GITHUB_TOKEN         = "${var.github_token}"
   }
 
-  tags {
-    environment = "dev"
-    terraform   = "True"
-  }
+  tags = "${var.tags}"
 }
 
 data "aws_iam_policy_document" "lambda" {
@@ -60,11 +57,12 @@ data "aws_iam_policy_document" "lambda" {
     effect = "Allow"
 
     actions = [
-      "ssm:PutParameter",
+      "secretsmanager:CreateSecret",
+      "secretsmanager:PutSecretValue",
     ]
 
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.ssm_prefix}*",
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:/${var.secrets_manager_prefix}/*",
     ]
   }
 

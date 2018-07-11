@@ -1,12 +1,12 @@
 # ------------------------------------------------------------------------------
 # Variables
 # ------------------------------------------------------------------------------
-variable "prefix" {
+variable "name_prefix" {
   description = "Prefix used for resource names."
 }
 
 variable "lambda_arn" {
-  description = "ARN of the STS Lambda."
+  description = "ARN of the Github Lambda."
 }
 
 variable "team_config" {
