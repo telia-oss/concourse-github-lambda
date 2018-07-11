@@ -43,7 +43,7 @@ func TestHandler(t *testing.T) {
 			githubKeys: []*github.Key{
 				{
 					ID:    github.Int64(1),
-					Title: github.String("key-title"),
+					Title: github.String("concourse-test-team-deploy-key"),
 				},
 			},
 			createdKey: &ec2.CreateKeyPairOutput{
@@ -60,6 +60,7 @@ func TestHandler(t *testing.T) {
 			github := mocks.NewMockGithubManager(ctrl)
 			github.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tc.githubKeys, nil, nil)
 			github.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
+			github.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 
 			ec2 := mocks.NewMockEC2Manager(ctrl)
 			ec2.EXPECT().CreateKeyPair(gomock.Any()).Times(1).Return(tc.createdKey, nil)
