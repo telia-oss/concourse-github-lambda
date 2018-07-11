@@ -78,6 +78,7 @@ func TestTemplate(t *testing.T) {
 			template:    "/concourse/{{.Team}}/{{.Repository}}",
 			team:        "TEAM",
 			repository:  "REPOSITORY",
+			expected:    "/concourse/TEAM/REPOSITORY",
 			shouldError: false,
 		},
 		{
@@ -85,6 +86,7 @@ func TestTemplate(t *testing.T) {
 			template:    "/concourse/{{.Team}}/{{.Repository}}/{{.Something}}",
 			team:        "TEAM",
 			repository:  "REPOSITORY",
+			expected:    "",
 			shouldError: true,
 		},
 	}
