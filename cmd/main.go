@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jessevdk/go-flags"
+	"github.com/sirupsen/logrus"
 	"github.com/telia-oss/concourse-github-lambda"
 )
 

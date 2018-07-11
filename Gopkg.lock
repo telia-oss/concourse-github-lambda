@@ -97,6 +97,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
@@ -111,7 +117,8 @@
     "ed25519/internal/edwards25519",
     "internal/chacha20",
     "poly1305",
-    "ssh"
+    "ssh",
+    "ssh/terminal"
   ]
   revision = "49796115aa4b964c318aad4f3084fdb41e9aa067"
 
@@ -134,6 +141,15 @@
   revision = "543e37812f10c46c622c9575afd7ad22f22a12ba"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+
+[[projects]]
   name = "google.golang.org/appengine"
   packages = [
     "internal",
@@ -150,6 +166,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "eba0049e9ee1c93292c0df705388d8a27ddb6011ec0bb9f0be87c0d9e6afa662"
+  inputs-digest = "d5d90dd1287b44d8156386116220759a2a059b76c7c0f963b3e3bd28e1113ae1"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/sirupsen/logrus"
 )
 
 // New lambda handler with the provided settings.
