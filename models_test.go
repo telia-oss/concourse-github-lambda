@@ -24,10 +24,6 @@ func TestConfig(t *testing.T) {
         {
             "name": "repo1",
             "readOnly": "true"
-        },
-        {
-            "name": "repo2",
-            "readOnly": "0"
         }
     ]
 }
@@ -39,6 +35,26 @@ func TestConfig(t *testing.T) {
 						Name:     "repo1",
 						ReadOnly: handler.BooleanString(true),
 					},
+				},
+			},
+		},
+
+		{
+			description: "We can unmarshal terraform booleans",
+			input: strings.TrimSpace(`
+{
+    "name": "team",
+    "repositories": [
+        {
+            "name": "repo2",
+            "readOnly": "0"
+        }
+    ]
+}
+`),
+			expected: handler.Team{
+				Name: "team",
+				Repositories: []handler.Repository{
 					{
 						Name:     "repo2",
 						ReadOnly: handler.BooleanString(false),
