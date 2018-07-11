@@ -4,33 +4,44 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/google/go-github/github"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 )
 
-// RepositoriesService interface
-type RepositoriesService interface {
+// GithubManager for testing purposes
+//go:generate mockgen -destination=mocks/mock_github_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda GithubManager
+type GithubManager interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
 	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
 }
 
+// SecretsManager for testing purposes.
+//go:generate mockgen -destination=mocks/mock_secrets_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsManager
+type SecretsManager secretsmanageriface.SecretsManagerAPI
+
+// EC2Manager for testing purposes.
+//go:generate mockgen -destination=mocks/mock_ec2_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Manager
+type EC2Manager ec2iface.EC2API
+
 // Manager handles API calls to AWS.
 type Manager struct {
-	repoClient RepositoriesService
-	ssmClient  ssmiface.SSMAPI
-	ec2Client  ec2iface.EC2API
-	region     string
-	owner      string
-	ctx        context.Context
+	githubClient  GithubManager
+	secretsClient SecretsManager
+	ec2Client     EC2Manager
+	region        string
+	owner         string
+	ctx           context.Context
 }
 
 // NewManager creates a new manager from a session, region and Github access token.
@@ -42,18 +53,18 @@ func NewManager(sess *session.Session, region, owner, token string) *Manager {
 
 	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
-		repoClient: github.NewClient(tc).Repositories,
-		ssmClient:  ssm.New(sess, config),
-		ec2Client:  ec2.New(sess, config),
-		region:     region,
-		owner:      owner,
-		ctx:        context.Background(),
+		githubClient:  github.NewClient(tc).Repositories,
+		secretsClient: secretsmanager.New(sess, config),
+		ec2Client:     ec2.New(sess, config),
+		region:        region,
+		owner:         owner,
+		ctx:           context.Background(),
 	}
 }
 
 // ListKeys for a repository.
 func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.repoClient.ListKeys(m.ctx, m.owner, repository.Name, nil)
+	keys, _, err := m.githubClient.ListKeys(m.ctx, m.owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +81,7 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	key, _, err := m.repoClient.CreateKey(m.ctx, m.owner, repository.Name, input)
+	key, _, err := m.githubClient.CreateKey(m.ctx, m.owner, repository.Name, input)
 	if err != nil {
 		return nil, err
 	}
@@ -79,19 +90,34 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) (*gi
 
 // DeleteKey for a repository.
 func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.repoClient.DeleteKey(m.ctx, m.owner, repository.Name, id)
+	_, err := m.githubClient.DeleteKey(m.ctx, m.owner, repository.Name, id)
 	return err
 }
 
-// WriteSecret to SSM.
-func (m *Manager) WriteSecret(name, value string) error {
-	input := &ssm.PutParameterInput{
-		Name:      aws.String(name),
-		Value:     aws.String(value),
-		Type:      aws.String("SecureString"),
-		Overwrite: aws.Bool(true),
+// WriteSecret to secrets manager.
+func (m *Manager) WriteSecret(name, secret string) error {
+	var err error
+
+	// Fewer API calls to naively try to create it and handle the error.
+	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
+		Name:        aws.String(name),
+		Description: aws.String("Lambda created secret for Concourse."),
+	})
+	if err != nil {
+		e, ok := err.(awserr.Error)
+		if !ok {
+			return fmt.Errorf("failed to convert error: %s", err)
+		}
+		if e.Code() != secretsmanager.ErrCodeResourceExistsException {
+			return err
+		}
 	}
-	_, err := m.ssmClient.PutParameter(input)
+
+	_, err = m.secretsClient.PutSecretValue(&secretsmanager.PutSecretValueInput{
+		SecretId:      aws.String(name),
+		SecretString:  aws.String(secret),
+		VersionStages: []*string{aws.String("AWSCURRENT")},
+	})
 	return err
 }
 
