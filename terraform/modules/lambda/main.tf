@@ -17,7 +17,7 @@ module "lambda" {
 
   environment {
     REGION               = "${data.aws_region.current.name}"
-    SECRETS_MANAGER_PATH = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Account}}"
+    SECRETS_MANAGER_PATH = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Repository}}-deploy-key"
     GITHUB_TITLE         = "${var.github_prefix}-{{.Team}}-deploy-key"
     GITHUB_TOKEN         = "${var.github_token}"
   }

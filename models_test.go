@@ -95,10 +95,10 @@ func TestTemplate(t *testing.T) {
 	}{
 		{
 			description: "template works as intended",
-			template:    "/concourse/{{.Team}}/{{.Repository}}",
+			template:    "/concourse/{{.Team}}/{{.Repository}}-deploy-key",
 			team:        "TEAM",
 			repository:  "REPOSITORY",
-			expected:    "/concourse/TEAM/REPOSITORY",
+			expected:    "/concourse/TEAM/REPOSITORY-deploy-key",
 			shouldError: false,
 		},
 		{

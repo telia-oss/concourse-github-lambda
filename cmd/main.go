@@ -14,7 +14,7 @@ import (
 // Command options
 type Command struct {
 	Region string `long:"region" env:"REGION" description:"AWS region to use for API calls."`
-	Path   string `long:"secrets-manager-path" env:"SECRETS_MANAGER_PATH" default:"/concourse/{{.Team}}/{{.Account}}" description:"Path to use when writing to AWS Secrets manager."`
+	Path   string `long:"secrets-manager-path" env:"SECRETS_MANAGER_PATH" default:"/concourse/{{.Team}}/{{.Repository}}-deploy-key" description:"Path to use when writing to AWS Secrets manager."`
 	Title  string `long:"github-title" env:"GITHUB_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Template for Github title."`
 	Token  string `long:"github-token" env:"GITHUB_TOKEN" description:"Access token which grants access to create deploy keys for the org."`
 }

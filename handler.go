@@ -10,8 +10,6 @@ import (
 // New lambda handler with the provided settings.
 func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.Logger) func(Team) error {
 	return func(team Team) error {
-		// Loop through teams and assume roles/write credentials for
-		// all accounts controlled by the team.
 		for _, repository := range team.Repositories {
 			log := logger.WithFields(logrus.Fields{
 				"team":       team.Name,
