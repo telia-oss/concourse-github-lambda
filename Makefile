@@ -21,7 +21,7 @@ build: test
 clean:
 	@echo "== Cleaning =="
 	rm $(BINARY_NAME) || true
-	rm concourse-sts-lambda.zip || true
+	rm concourse-github-lambda.zip || true
 
 release:
 	@echo "== Release build =="
