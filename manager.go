@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -94,10 +95,11 @@ func (m *Manager) DeleteKey(repository Repository, id int) error {
 // WriteSecret to secrets manager.
 func (m *Manager) WriteSecret(name, secret string) error {
 	var err error
+	timestamp := time.Now().Format(time.RFC3339)
 
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
 		Name:        aws.String(name),
-		Description: aws.String("Lambda created secret for Concourse."),
+		Description: aws.String(fmt.Sprintf("Github deploy key for Concourse. Last updated: %s", timestamp)),
 	})
 	if err != nil {
 		e, ok := err.(awserr.Error)
