@@ -50,13 +50,13 @@ func New(manager *Manager, secretTemplate, titleTemplate string, logger *logrus.
 			}
 
 			// Write the new public key to Github
-			if err = manager.CreateKey(repository, path, public); err != nil {
+			if err = manager.CreateKey(repository, title, public); err != nil {
 				log.Warnf("failed to create key on github: %s", err)
 				continue
 			}
 
 			// Write the private key to Secrets manager
-			if err := manager.WriteSecret(private, path); err != nil {
+			if err := manager.WriteSecret(path, private); err != nil {
 				log.Warnf("failed to write secret key: %s", err)
 				continue
 			}
