@@ -95,11 +95,10 @@ func (m *Manager) DeleteKey(repository Repository, id int) error {
 // WriteSecret to secrets manager.
 func (m *Manager) WriteSecret(name, secret string) error {
 	var err error
-	timestamp := time.Now().Format(time.RFC3339)
 
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
 		Name:        aws.String(name),
-		Description: aws.String(fmt.Sprintf("Github deploy key for Concourse. Last updated: %s", timestamp)),
+		Description: aws.String("Github deploy key for Concourse."),
 	})
 	if err != nil {
 		e, ok := err.(awserr.Error)
@@ -111,10 +110,12 @@ func (m *Manager) WriteSecret(name, secret string) error {
 		}
 	}
 
-	_, err = m.secretsClient.PutSecretValue(&secretsmanager.PutSecretValueInput{
-		SecretId:      aws.String(name),
-		SecretString:  aws.String(secret),
-		VersionStages: []*string{aws.String("AWSCURRENT")},
+	timestamp := time.Now().Format(time.RFC3339)
+
+	_, err = m.secretsClient.UpdateSecret(&secretsmanager.UpdateSecretInput{
+		Description:  aws.String(fmt.Sprintf("Github deploy key for Concourse. Last updated: %s", timestamp)),
+		SecretId:     aws.String(name),
+		SecretString: aws.String(secret),
 	})
 	return err
 }

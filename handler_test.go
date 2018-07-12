@@ -68,7 +68,7 @@ func TestHandler(t *testing.T) {
 
 			secrets := mocks.NewMockSecretsManager(ctrl)
 			secrets.EXPECT().CreateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
-			secrets.EXPECT().PutSecretValue(gomock.Any()).MinTimes(1).Return(nil, nil)
+			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 
 			logger, _ := logrus.NewNullLogger()
 			handle := handler.New(handler.NewTestManager(github, secrets, ec2), tc.path, tc.title, logger)
