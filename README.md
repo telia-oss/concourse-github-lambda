@@ -10,7 +10,7 @@ the terraform subdirectory for an example that should work (with minimal effort)
 Our CI/CD (in our case Concourse) needs deploy keys to fetch code from Github.
 Instead of having teams do this manually, we can use this Lambda and simply pass
 a list of repositories that the team requires access to, and deploy keys will be
-generated and written to SSM (where it is available to their pipelines).
+generated and written to Secrets Manager (where it is available to their pipelines).
 
 ### How?
 
@@ -28,13 +28,15 @@ Be in the root directory:
 make release
 ```
 
-You should now have a zipped Lambda function. Next, edit [terraform/main.tf](./terraform/main.tf)
+You should now have a zipped Lambda function. Next, edit [terraform/example.tf](./terraform/example.tf)
 to your liking. When done, be in the terraform directory:
 
 ```bash
 terraform init
 terraform apply
 ```
+
+NOTE: The `aws/secretsmanager` KMS Key Alias has to be created/exist before the lambda is deployed.
 
 ### Team configuration
 
@@ -43,10 +45,13 @@ Example configuration for a Team (which is then passed as input in the CloudWatc
 ```json
 {
   "name": "example-team",
-  "keyId": "arn:aws:kms:eu-west-1:123456789999:key/fa8eb753-4feb-2c59-b142-03822ca35dbb",
-  "repositories": [{
-    "concourse-github-lambda"
-  }]
+  "repositories": [
+    {
+      "name": "concourse-github-lambda",
+      "owner": "telia-oss",
+      "readOnly": "true"
+    }
+  ]
 }
 ```
 

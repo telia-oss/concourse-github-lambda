@@ -2,7 +2,7 @@
 # Resources
 # ------------------------------------------------------------------------------
 resource "aws_cloudwatch_event_rule" "main" {
-  name                = "${var.prefix}-github-${substr(md5(var.team_config), 0, 7)}"
+  name                = "${var.name_prefix}-github-${substr(md5(var.team_config), 0, 7)}"
   description         = "Github Lambda team configuration and trigger."
   schedule_expression = "rate(7 days)"
 }
@@ -14,7 +14,7 @@ resource "aws_cloudwatch_event_target" "main" {
 }
 
 resource "aws_lambda_permission" "main" {
-  statement_id  = "${var.prefix}-github-lambda-permission"
+  statement_id  = "${var.name_prefix}-github-lambda-permission"
   action        = "lambda:InvokeFunction"
   function_name = "${var.lambda_arn}"
   principal     = "events.amazonaws.com"
