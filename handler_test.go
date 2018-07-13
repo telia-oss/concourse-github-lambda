@@ -57,10 +57,12 @@ func TestHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			github := mocks.NewMockGithubManager(ctrl)
-			github.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tc.githubKeys, nil, nil)
-			github.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
-			github.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+			repos := mocks.NewMockRepoManager(ctrl)
+			repos.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tc.githubKeys, nil, nil)
+			repos.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
+			repos.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+
+			apps := mocks.NewMockAppsManager(ctrl)
 
 			ec2 := mocks.NewMockEC2Manager(ctrl)
 			ec2.EXPECT().CreateKeyPair(gomock.Any()).Times(1).Return(tc.createdKey, nil)
@@ -71,7 +73,7 @@ func TestHandler(t *testing.T) {
 			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 
 			logger, _ := logrus.NewNullLogger()
-			handle := handler.New(handler.NewTestManager(github, secrets, ec2), tc.path, tc.title, logger)
+			handle := handler.New(handler.NewTestManager(repos, apps, secrets, ec2), tc.path, tc.title, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)

@@ -52,6 +52,18 @@
   version = "v1.14.24"
 
 [[projects]]
+  name = "github.com/bradleyfalzon/ghinstallation"
+  packages = ["."]
+  revision = "3f4e9b1898e6b65e31827d5dccb97d91d59feaa3"
+  version = "v0.1.2"
+
+[[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
@@ -159,6 +171,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "51eea13b3ee00b30087698d029e8ab33e022c1c26c533b6ad705198b46ffb48a"
+  inputs-digest = "530c0179765c4a05d67c446be80c8e8d2cf1835538307d7203f775bfec026cdb"
   solver-name = "gps-cdcl"
   solver-version = 1

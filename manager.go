@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,17 +16,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 )
 
-// GithubManager for testing purposes
-//go:generate mockgen -destination=mocks/mock_github_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda GithubManager
-type GithubManager interface {
+// RepoManager for testing purposes
+//go:generate mockgen -destination=mocks/mock_repo_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda RepoManager
+type RepoManager interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
 	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
+}
+
+// AppsManager for testing purposes
+//go:generate mockgen -destination=mocks/mock_apps_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda AppsManager
+type AppsManager interface {
+	ListRepos(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error)
 }
 
 // SecretsManager for testing purposes.
@@ -38,34 +46,67 @@ type EC2Manager ec2iface.EC2API
 
 // Manager handles API calls to AWS.
 type Manager struct {
-	githubClient  GithubManager
+	RepoClient    RepoManager
+	appsClient    AppsManager
 	secretsClient SecretsManager
 	ec2Client     EC2Manager
 }
 
-// NewManager creates a new manager from a session, region and Github access token.
-func NewManager(sess *session.Session, region, token string) *Manager {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
+// NewManager creates a new manager from a session, region, Github integration ID and private key.
+func NewManager(sess *session.Session, region string, integrationID int, privateKey string) (*Manager, error) {
+	tr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, integrationID, []byte(privateKey))
+	if err != nil {
+		return nil, err
+	}
+	app := github.NewClient(&http.Client{Transport: tr})
+
+	// List installations and make sure we (only) have 1 (private app)
+	installations, _, err := app.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(installations) != 1 {
+		switch len(installations) {
+		case 0:
+			return nil, errors.New("application has zero installations")
+		default:
+			return nil, errors.New("application has multiple installations")
+		}
+	}
+
+	// Get an installation token and create a new Github Client.
+	token, _, err := app.Apps.CreateInstallationToken(context.TODO(), *installations[0].ID)
+	tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token.GetToken()},
+	))
 
 	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
-		githubClient:  github.NewClient(tc).Repositories,
+		RepoClient:    github.NewClient(tc).Repositories,
+		appsClient:    github.NewClient(tc).Apps,
 		secretsClient: secretsmanager.New(sess, config),
 		ec2Client:     ec2.New(sess, config),
-	}
+	}, nil
 }
 
 // NewTestManager ...
-func NewTestManager(g GithubManager, s SecretsManager, e EC2Manager) *Manager {
-	return &Manager{githubClient: g, secretsClient: s, ec2Client: e}
+func NewTestManager(r RepoManager, a AppsManager, s SecretsManager, e EC2Manager) *Manager {
+	return &Manager{RepoClient: r, appsClient: a, secretsClient: s, ec2Client: e}
+}
+
+// ListRepositories for an installation.
+func (m *Manager) ListRepositories() ([]*github.Repository, error) {
+	// TODO: Paginate the response
+	repos, _, err := m.appsClient.ListRepos(context.TODO(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // ListKeys for a repository.
 func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.githubClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
+	keys, _, err := m.RepoClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +123,13 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) erro
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	_, _, err := m.githubClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
+	_, _, err := m.RepoClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
 	return err
 }
 
 // DeleteKey for a repository.
 func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.githubClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
+	_, err := m.RepoClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
 	return err
 }
 
