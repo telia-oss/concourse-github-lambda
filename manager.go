@@ -36,6 +36,12 @@ type AppsClient interface {
 	ListRepos(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error)
 }
 
+// GithubClient ...
+type GithubClient struct {
+	Repos RepoClient
+	Apps  AppsClient
+}
+
 // SecretsClient for testing purposes.
 //go:generate mockgen -destination=mocks/mock_secrets_client.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsClient
 type SecretsClient secretsmanageriface.SecretsManagerAPI
@@ -46,8 +52,7 @@ type EC2Client ec2iface.EC2API
 
 // Manager handles API calls to AWS.
 type Manager struct {
-	repoClient    RepoClient
-	appsClient    AppsClient
+	githubClients map[string]GithubClient
 	secretsClient SecretsClient
 	ec2Client     EC2Client
 }
@@ -65,48 +70,58 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 	if err != nil {
 		return nil, err
 	}
-	if len(installations) != 1 {
-		switch len(installations) {
-		case 0:
-			return nil, errors.New("application has zero installations")
-		default:
-			return nil, errors.New("application has multiple installations")
+
+	// TODO: Refactor
+	clients := make(map[string]GithubClient, len(installations))
+	for _, i := range installations {
+		token, _, err := app.Apps.CreateInstallationToken(context.TODO(), i.GetID())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create installation token: %s", err)
+		}
+		oauth := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token.GetToken()},
+		))
+		client := github.NewClient(oauth)
+		owner := i.GetAccount().GetLogin()
+		if owner == "" {
+			return nil, errors.New("failed to get owner for github app")
+		}
+		clients[owner] = GithubClient{
+			Repos: client.Repositories,
+			Apps:  client.Apps,
 		}
 	}
 
-	// Get an installation token and create a new Github Client.
-	token, _, err := app.Apps.CreateInstallationToken(context.TODO(), *installations[0].ID)
-	tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token.GetToken()},
-	))
-
 	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
-		repoClient:    github.NewClient(tc).Repositories,
-		appsClient:    github.NewClient(tc).Apps,
+		githubClients: clients,
 		secretsClient: secretsmanager.New(sess, config),
 		ec2Client:     ec2.New(sess, config),
 	}, nil
 }
 
 // NewTestManager ...
-func NewTestManager(r RepoClient, a AppsClient, s SecretsClient, e EC2Client) *Manager {
-	return &Manager{repoClient: r, appsClient: a, secretsClient: s, ec2Client: e}
+func NewTestManager(owner string, r RepoClient, a AppsClient, s SecretsClient, e EC2Client) *Manager {
+	gh := GithubClient{Repos: r, Apps: a}
+	return &Manager{secretsClient: s, ec2Client: e, githubClients: map[string]GithubClient{owner: gh}}
 }
 
-// ListRepositories for an installation.
-func (m *Manager) ListRepositories() ([]*github.Repository, error) {
-	// TODO: Paginate the response
-	repos, _, err := m.appsClient.ListRepos(context.TODO(), nil)
-	if err != nil {
-		return nil, err
+// GetInstallationClient returns the Github client for a particular installation.
+func (m *Manager) GetInstallationClient(owner string) (*GithubClient, error) {
+	client, ok := m.githubClients[owner]
+	if !ok {
+		return nil, fmt.Errorf("the github app is not installed for user or org: '%s'", owner)
 	}
-	return repos, nil
+	return &client, nil
 }
 
 // ListKeys for a repository.
 func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.repoClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
+	client, err := m.GetInstallationClient(repository.Owner)
+	if err != nil {
+		return nil, err
+	}
+	keys, _, err := client.Repos.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +130,10 @@ func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
 
 // CreateKey for a repository.
 func (m *Manager) CreateKey(repository Repository, title, publicKey string) error {
+	client, err := m.GetInstallationClient(repository.Owner)
+	if err != nil {
+		return err
+	}
 	input := &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
@@ -123,13 +142,17 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) erro
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	_, _, err := m.repoClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
+	_, _, err = client.Repos.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
 	return err
 }
 
 // DeleteKey for a repository.
 func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.repoClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
+	client, err := m.GetInstallationClient(repository.Owner)
+	if err != nil {
+		return err
+	}
+	_, err = client.Repos.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
 	return err
 }
 
