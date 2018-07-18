@@ -74,6 +74,10 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 	// TODO: Refactor
 	clients := make(map[string]GithubClient, len(installations))
 	for _, i := range installations {
+		owner := i.GetAccount().GetLogin()
+		if owner == "" {
+			return nil, errors.New("failed to get owner for installation")
+		}
 		token, _, err := app.Apps.CreateInstallationToken(context.TODO(), i.GetID())
 		if err != nil {
 			return nil, fmt.Errorf("failed to create installation token: %s", err)
@@ -82,10 +86,6 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 			&oauth2.Token{AccessToken: token.GetToken()},
 		))
 		client := github.NewClient(oauth)
-		owner := i.GetAccount().GetLogin()
-		if owner == "" {
-			return nil, errors.New("failed to get owner for github app")
-		}
 		clients[owner] = GithubClient{
 			Repos: client.Repositories,
 			Apps:  client.Apps,
