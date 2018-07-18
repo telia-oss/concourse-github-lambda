@@ -74,9 +74,11 @@ func TestHandler(t *testing.T) {
 			secrets.EXPECT().CreateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 
+			client := map[string]handler.GithubClient{
+				owner: {Repos: repos, Apps: apps},
+			}
 			logger, _ := logrus.NewNullLogger()
-			manager := handler.NewTestManager(owner, repos, apps, secrets, ec2)
-			handle := handler.New(manager, tc.path, tc.title, logger)
+			handle := handler.New(handler.NewTestManager(client, secrets, ec2), tc.path, tc.title, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)

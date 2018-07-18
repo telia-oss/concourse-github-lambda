@@ -101,9 +101,8 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 }
 
 // NewTestManager ...
-func NewTestManager(owner string, r RepoClient, a AppsClient, s SecretsClient, e EC2Client) *Manager {
-	gh := GithubClient{Repos: r, Apps: a}
-	return &Manager{secretsClient: s, ec2Client: e, githubClients: map[string]GithubClient{owner: gh}}
+func NewTestManager(g map[string]GithubClient, s SecretsClient, e EC2Client) *Manager {
+	return &Manager{secretsClient: s, ec2Client: e, githubClients: g}
 }
 
 // GetInstallationClient returns the Github client for a particular installation.
