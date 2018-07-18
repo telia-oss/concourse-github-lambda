@@ -19,8 +19,12 @@ variable "github_prefix" {
   default     = "concourse"
 }
 
-variable "github_token" {
-  description = "Access token which grants access to Github API for the repositories."
+variable "github_integration_id" {
+  description = "Github App integration ID."
+}
+
+variable "github_private_key" {
+  description = "Github App private key."
 }
 
 variable "tags" {

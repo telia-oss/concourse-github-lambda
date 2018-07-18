@@ -16,10 +16,11 @@ module "lambda" {
   runtime     = "go1.x"
 
   environment {
-    REGION               = "${data.aws_region.current.name}"
-    SECRETS_MANAGER_PATH = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Repository}}-deploy-key"
-    GITHUB_TITLE         = "${var.github_prefix}-{{.Team}}-deploy-key"
-    GITHUB_TOKEN         = "${var.github_token}"
+    REGION                = "${data.aws_region.current.name}"
+    SECRETS_MANAGER_PATH  = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Repository}}-deploy-key"
+    GITHUB_TITLE          = "${var.github_prefix}-{{.Team}}-deploy-key"
+    GITHUB_INTEGRATION_ID = "${var.github_integration_id}"
+    GITHUB_PRIVATE_KEY    = "${var.github_private_key}"
   }
 
   tags = "${var.tags}"

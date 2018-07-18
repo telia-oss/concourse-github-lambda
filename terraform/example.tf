@@ -8,8 +8,9 @@ module "github-lambda" {
   name_prefix            = "github-lambda"
   filename               = "../concourse-github-lambda.zip"
   github_prefix          = "concourse"
-  github_token           = ""
   secrets_manager_prefix = "concourse"
+  github_integration_id  = "ssm://concourse-github-lambda-integration-id"
+  github_private_key     = "ssm://concourse-github-lambda-private-key"
 
   tags {
     environment = "dev"
