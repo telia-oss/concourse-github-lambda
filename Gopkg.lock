@@ -8,8 +8,8 @@
     "lambda/messages",
     "lambdacontext"
   ]
-  revision = "fafa7e49388b8991caf99308e80655ba91816b72"
-  version = "v1.1.0"
+  revision = "4d30d0ff60440c2d0480a15747c96ee71c3c53d4"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -33,6 +33,7 @@
     "aws/signer/v4",
     "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
@@ -44,12 +45,16 @@
     "private/protocol/xml/xmlutil",
     "service/ec2",
     "service/ec2/ec2iface",
+    "service/kms",
+    "service/kms/kmsiface",
     "service/secretsmanager",
     "service/secretsmanager/secretsmanageriface",
+    "service/ssm",
+    "service/ssm/ssmiface",
     "service/sts"
   ]
-  revision = "eeb327a02aac261d701e102e14993eae4d5ab844"
-  version = "v1.14.24"
+  revision = "c25475dd537f7becaf29e97c14617c8082f6b5d4"
+  version = "v1.14.28"
 
 [[projects]]
   name = "github.com/bradleyfalzon/ghinstallation"
@@ -66,8 +71,8 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
-  version = "v1.32.0"
+  revision = "358ee7663966325963d4e8b2e1fbd570c5195153"
+  version = "v1.38.1"
 
 [[projects]]
   name = "github.com/golang/mock"
@@ -78,8 +83,8 @@
 [[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
-  version = "v1.0.0"
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/google/go-github"
@@ -96,8 +101,8 @@
 [[projects]]
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
-  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
-  version = "v1.3.0"
+  revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
+  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -115,17 +120,24 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/telia-oss/aws-env"
+  packages = ["."]
+  revision = "1b9bf7ae2b6dc2f0a1f45438e029053d436dd671"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "internal/subtle",
     "poly1305",
     "ssh",
     "ssh/terminal"
   ]
-  revision = "49796115aa4b964c318aad4f3084fdb41e9aa067"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -134,7 +146,7 @@
     "context",
     "context/ctxhttp"
   ]
-  revision = "cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb"
+  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
 
 [[projects]]
   branch = "master"
@@ -143,7 +155,7 @@
     ".",
     "internal"
   ]
-  revision = "543e37812f10c46c622c9575afd7ad22f22a12ba"
+  revision = "ef147856a6ddbb60760db74283d2424e98c87bff"
 
 [[projects]]
   branch = "master"
@@ -152,7 +164,7 @@
     "unix",
     "windows"
   ]
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -165,12 +177,12 @@
     "internal/urlfetch",
     "urlfetch"
   ]
-  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
-  version = "v1.0.0"
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
+  version = "v1.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "530c0179765c4a05d67c446be80c8e8d2cf1835538307d7203f775bfec026cdb"
+  inputs-digest = "a57913a99f70a2e40113c066a2e302f89bcb5d4ad877914a55147b466a089c1f"
   solver-name = "gps-cdcl"
   solver-version = 1
