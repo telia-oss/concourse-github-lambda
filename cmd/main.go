@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"github.com/telia-oss/aws-env"
 	"github.com/telia-oss/concourse-github-lambda"
 )
 
@@ -16,8 +17,8 @@ type Command struct {
 	Region        string `long:"region" env:"REGION" description:"AWS region to use for API calls."`
 	Path          string `long:"secrets-manager-path" env:"SECRETS_MANAGER_PATH" default:"/concourse/{{.Team}}/{{.Repository}}-deploy-key" description:"Path to use when writing to AWS Secrets manager."`
 	Title         string `long:"github-title" env:"GITHUB_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Template for Github title."`
-	PrivateKey    string `long:"github-private-key" env:"GITHUB_PRIVATE_KEY" description:"Private key for the Github App."`
 	IntegrationID int    `long:"github-integration-id" env:"GITHUB_INTEGRATION_ID" description:"Integration ID for the Github App."`
+	PrivateKey    string `long:"github-private-key" env:"GITHUB_PRIVATE_KEY" description:"Private key for the Github App."`
 }
 
 // Validate the Command options.
@@ -35,28 +36,42 @@ func (c *Command) Validate() error {
 }
 
 func main() {
-	var command Command
+	// New AWS Session with the default providers
+	sess, err := session.NewSession()
+	if err != nil {
+		panic(fmt.Errorf("failed to create new session: %s", err))
+	}
 
-	_, err := flags.Parse(&command)
+	// Set up a logger
+	logger := logrus.New()
+	logger.Formatter = &logrus.JSONFormatter{}
+
+	// Exchange secrets in environment variables with their values.
+	env, err := awsenv.New(sess, logger)
+	if err != nil {
+		panic(fmt.Errorf("failed to initalize awsenv: %s", err))
+	}
+	if err := env.Replace(); err != nil {
+		panic(fmt.Errorf("failed to replace environment variables: %s", err))
+	}
+
+	// Parse environment variables
+	var command Command
+	_, err = flags.Parse(&command)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse flag %s", err))
 	}
 	if err := command.Validate(); err != nil {
 		panic(fmt.Errorf("invalid command: %s", err))
 	}
-	sess, err := session.NewSession()
-	if err != nil {
-		panic(fmt.Errorf("failed to create new session: %s", err))
-	}
 
+	// Create new manager
 	manager, err := handler.NewManager(sess, command.Region, command.IntegrationID, command.PrivateKey)
 	if err != nil {
 		panic(fmt.Errorf("failed to create new manager: %s", err))
 	}
 
-	logger := logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
-
+	// Run
 	f := handler.New(manager, command.Path, command.Title, logger)
 	lambda.Start(f)
 }
