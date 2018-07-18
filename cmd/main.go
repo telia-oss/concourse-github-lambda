@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -36,39 +35,39 @@ func (c *Command) Validate() error {
 }
 
 func main() {
-	// New AWS Session with the default providers
-	sess, err := session.NewSession()
-	if err != nil {
-		panic(fmt.Errorf("failed to create new session: %s", err))
-	}
-
 	// Set up a logger
 	logger := logrus.New()
 	logger.Formatter = &logrus.JSONFormatter{}
 
+	// New AWS Session with the default providers
+	sess, err := session.NewSession()
+	if err != nil {
+		logger.Fatalf("failed to create a new session: %s", err)
+	}
+
 	// Exchange secrets in environment variables with their values.
 	env, err := awsenv.New(sess, logger)
 	if err != nil {
-		panic(fmt.Errorf("failed to initalize awsenv: %s", err))
+		logger.Fatalf("failed to initialize awsenv: %s", err)
 	}
 	if err := env.Replace(); err != nil {
-		panic(fmt.Errorf("failed to replace environment variables: %s", err))
+		logger.Fatalf("failed to replace environment variables: %s", err)
 	}
 
 	// Parse environment variables
 	var command Command
 	_, err = flags.Parse(&command)
 	if err != nil {
-		panic(fmt.Errorf("failed to parse flag %s", err))
+		logger.Fatalf("failed to parse flag: %s", err)
 	}
 	if err := command.Validate(); err != nil {
-		panic(fmt.Errorf("invalid command: %s", err))
+		logger.Fatalf("invalid command: %s", err)
 	}
 
 	// Create new manager
 	manager, err := handler.NewManager(sess, command.Region, command.IntegrationID, command.PrivateKey)
 	if err != nil {
-		panic(fmt.Errorf("failed to create new manager: %s", err))
+		logger.Fatalf("failed to create new manager: %s", err)
 	}
 
 	// Run
