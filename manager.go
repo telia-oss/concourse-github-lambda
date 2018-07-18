@@ -22,34 +22,34 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// RepoManager for testing purposes
-//go:generate mockgen -destination=mocks/mock_repo_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda RepoManager
-type RepoManager interface {
+// RepoClient for testing purposes
+//go:generate mockgen -destination=mocks/mock_repo_client.go -package=mocks github.com/telia-oss/concourse-github-lambda RepoClient
+type RepoClient interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
 	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
 }
 
-// AppsManager for testing purposes
-//go:generate mockgen -destination=mocks/mock_apps_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda AppsManager
-type AppsManager interface {
+// AppsClient for testing purposes
+//go:generate mockgen -destination=mocks/mock_apps_client.go -package=mocks github.com/telia-oss/concourse-github-lambda AppsClient
+type AppsClient interface {
 	ListRepos(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error)
 }
 
-// SecretsManager for testing purposes.
-//go:generate mockgen -destination=mocks/mock_secrets_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsManager
-type SecretsManager secretsmanageriface.SecretsManagerAPI
+// SecretsClient for testing purposes.
+//go:generate mockgen -destination=mocks/mock_secrets_client.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsClient
+type SecretsClient secretsmanageriface.SecretsManagerAPI
 
-// EC2Manager for testing purposes.
-//go:generate mockgen -destination=mocks/mock_ec2_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Manager
-type EC2Manager ec2iface.EC2API
+// EC2Client for testing purposes.
+//go:generate mockgen -destination=mocks/mock_ec2_client.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Client
+type EC2Client ec2iface.EC2API
 
 // Manager handles API calls to AWS.
 type Manager struct {
-	RepoClient    RepoManager
-	appsClient    AppsManager
-	secretsClient SecretsManager
-	ec2Client     EC2Manager
+	repoClient    RepoClient
+	appsClient    AppsClient
+	secretsClient SecretsClient
+	ec2Client     EC2Client
 }
 
 // NewManager creates a new manager from a session, region, Github integration ID and private key.
@@ -82,7 +82,7 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 
 	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
-		RepoClient:    github.NewClient(tc).Repositories,
+		repoClient:    github.NewClient(tc).Repositories,
 		appsClient:    github.NewClient(tc).Apps,
 		secretsClient: secretsmanager.New(sess, config),
 		ec2Client:     ec2.New(sess, config),
@@ -90,8 +90,8 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 }
 
 // NewTestManager ...
-func NewTestManager(r RepoManager, a AppsManager, s SecretsManager, e EC2Manager) *Manager {
-	return &Manager{RepoClient: r, appsClient: a, secretsClient: s, ec2Client: e}
+func NewTestManager(r RepoClient, a AppsClient, s SecretsClient, e EC2Client) *Manager {
+	return &Manager{repoClient: r, appsClient: a, secretsClient: s, ec2Client: e}
 }
 
 // ListRepositories for an installation.
@@ -106,7 +106,7 @@ func (m *Manager) ListRepositories() ([]*github.Repository, error) {
 
 // ListKeys for a repository.
 func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.RepoClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
+	keys, _, err := m.repoClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -123,13 +123,13 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) erro
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	_, _, err := m.RepoClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
+	_, _, err := m.repoClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
 	return err
 }
 
 // DeleteKey for a repository.
 func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.RepoClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
+	_, err := m.repoClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
 	return err
 }
 
