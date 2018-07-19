@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
-	"github.com/telia-oss/aws-env"
+	environment "github.com/telia-oss/aws-env"
 	"github.com/telia-oss/concourse-github-lambda"
 )
 
@@ -34,11 +34,14 @@ func (c *Command) Validate() error {
 	return nil
 }
 
-func main() {
-	// Set up a logger
-	logger := logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
+var logger *logrus.Logger
 
+func init() {
+	logger = logrus.New()
+	logger.Formatter = &logrus.JSONFormatter{}
+}
+
+func main() {
 	// New AWS Session with the default providers
 	sess, err := session.NewSession()
 	if err != nil {
@@ -46,12 +49,12 @@ func main() {
 	}
 
 	// Exchange secrets in environment variables with their values.
-	env, err := awsenv.New(sess, logger)
+	env, err := environment.New(sess)
 	if err != nil {
-		logger.Fatalf("failed to initialize awsenv: %s", err)
+		logger.Fatalf("failed to initialize aws-env: %s", err)
 	}
-	if err := env.Replace(); err != nil {
-		logger.Fatalf("failed to replace environment variables: %s", err)
+	if err := env.Populate(); err != nil {
+		logger.Fatalf("failed to populate environment: %s", err)
 	}
 
 	// Parse environment variables
