@@ -57,7 +57,7 @@ module "github-lambda-trigger" {
     {
       "name": "go-hooks",
       "owner": "itsdalmo",
-      "readOnly": "false"
+      "readOnly": "true"
     }
   ]
 }
