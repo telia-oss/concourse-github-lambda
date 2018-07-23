@@ -213,7 +213,7 @@ func (m *Manager) writeSecret(name, secret string) error {
 	timestamp := time.Now().Format(time.RFC3339)
 
 	_, err = m.secretsClient.UpdateSecret(&secretsmanager.UpdateSecretInput{
-		Description:  aws.String(fmt.Sprintf("Github deploy key for Concourse. Last updated: %s", timestamp)),
+		Description:  aws.String(fmt.Sprintf("Github credential for Concourse. Last updated: %s", timestamp)),
 		SecretId:     aws.String(name),
 		SecretString: aws.String(secret),
 	})
