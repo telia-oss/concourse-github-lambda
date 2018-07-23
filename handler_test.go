@@ -30,8 +30,9 @@ func TestHandler(t *testing.T) {
 
 	tests := []struct {
 		description string
-		path        string
-		title       string
+		tokenPath   string
+		keyPath     string
+		keyTitle    string
 		team        handler.Team
 		githubKeys  []*github.Key
 		createdKey  *ec2.CreateKeyPairOutput
@@ -39,8 +40,9 @@ func TestHandler(t *testing.T) {
 
 		{
 			description: "creates new keys and writes them to github and secrets manager",
-			path:        "/concourse/{{.Team}}/{{.Repository}}",
-			title:       "concourse-{{.Team}}-deploy-key",
+			tokenPath:   "/concourse/{{.Team}}/{{.Owner}}",
+			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
+			keyTitle:    "concourse-{{.Team}}-deploy-key",
 			team:        team,
 			githubKeys: []*github.Key{
 				{
@@ -78,7 +80,7 @@ func TestHandler(t *testing.T) {
 				owner: {Repos: repos, Apps: apps},
 			}
 			logger, _ := logrus.NewNullLogger()
-			handle := handler.New(handler.NewTestManager(client, secrets, ec2), tc.path, tc.title, logger)
+			handle := handler.New(handler.NewTestManager(client, secrets, ec2), tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)

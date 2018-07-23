@@ -50,43 +50,45 @@ type SecretsClient secretsmanageriface.SecretsManagerAPI
 //go:generate mockgen -destination=mocks/mock_ec2_client.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Client
 type EC2Client ec2iface.EC2API
 
-// Manager handles API calls to AWS.
-type Manager struct {
-	githubClients map[string]GithubClient
-	secretsClient SecretsClient
-	ec2Client     EC2Client
+// NewTestManager for testing purposes.
+func NewTestManager(g map[string]GithubClient, s SecretsClient, e EC2Client) *Manager {
+	return &Manager{secretsClient: s, ec2Client: e, deployKeyClients: g}
 }
 
-// NewManager creates a new manager from a session, region, Github integration ID and private key.
-func NewManager(sess *session.Session, region string, integrationID int, privateKey string) (*Manager, error) {
-	tr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, integrationID, []byte(privateKey))
-	if err != nil {
-		return nil, err
-	}
-	app := github.NewClient(&http.Client{Transport: tr})
+// Manager handles API calls to AWS.
+type Manager struct {
+	accessTokens     map[string]string
+	deployKeyClients map[string]GithubClient
+	secretsClient    SecretsClient
+	ec2Client        EC2Client
+}
 
-	// List installations and make sure we (only) have 1 (private app)
-	installations, _, err := app.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
+// NewManager creates a new manager for handling rotation of Github deploy keys and access tokens.
+func NewManager(
+	sess *session.Session,
+	region string,
+	keyServiceIntegrationID int,
+	keyServicePrivateKey string,
+	tokenServiceIntegrationID int,
+	tokenServicePrivateKey string,
+) (*Manager, error) {
+	accessTokens, err := createInstallationTokens(tokenServiceIntegrationID, tokenServicePrivateKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate installation tokens for access token app: %s", err)
 	}
 
-	// TODO: Refactor
-	clients := make(map[string]GithubClient, len(installations))
-	for _, i := range installations {
-		owner := i.GetAccount().GetLogin()
-		if owner == "" {
-			return nil, errors.New("failed to get owner for installation")
-		}
-		token, _, err := app.Apps.CreateInstallationToken(context.TODO(), i.GetID())
-		if err != nil {
-			return nil, fmt.Errorf("failed to create installation token: %s", err)
-		}
+	deployKeyTokens, err := createInstallationTokens(keyServiceIntegrationID, keyServicePrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate installation tokens for deploy key app: %s", err)
+	}
+
+	deployKeyClients := make(map[string]GithubClient, len(deployKeyTokens))
+	for owner, token := range deployKeyTokens {
 		oauth := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: token.GetToken()},
+			&oauth2.Token{AccessToken: token},
 		))
 		client := github.NewClient(oauth)
-		clients[owner] = GithubClient{
+		deployKeyClients[owner] = GithubClient{
 			Repos: client.Repositories,
 			Apps:  client.Apps,
 		}
@@ -94,29 +96,64 @@ func NewManager(sess *session.Session, region string, integrationID int, private
 
 	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
-		githubClients: clients,
-		secretsClient: secretsmanager.New(sess, config),
-		ec2Client:     ec2.New(sess, config),
+		accessTokens:     accessTokens,
+		deployKeyClients: deployKeyClients,
+		secretsClient:    secretsmanager.New(sess, config),
+		ec2Client:        ec2.New(sess, config),
 	}, nil
 }
 
-// NewTestManager ...
-func NewTestManager(g map[string]GithubClient, s SecretsClient, e EC2Client) *Manager {
-	return &Manager{secretsClient: s, ec2Client: e, githubClients: g}
+func createInstallationTokens(integrationID int, privateKey string) (map[string]string, error) {
+	tr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, integrationID, []byte(privateKey))
+	if err != nil {
+		return nil, err
+	}
+	client := github.NewClient(&http.Client{Transport: tr})
+
+	// List installations (TODO: Paginate results.)
+	installations, _, err := client.Apps.ListInstallations(context.TODO(), &github.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list installations: %s", err)
+	}
+
+	tokens := make(map[string]string, len(installations))
+
+	for _, i := range installations {
+		owner := i.GetAccount().GetLogin()
+		if owner == "" {
+			return nil, fmt.Errorf("failed to get owner for installation: %d", i.GetID())
+		}
+		token, _, err := client.Apps.CreateInstallationToken(context.TODO(), i.GetID())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create token for installation: %s", err)
+		}
+		tokens[owner] = token.GetToken()
+	}
+
+	return tokens, nil
 }
 
-// GetInstallationClient returns the Github client for a particular installation.
-func (m *Manager) GetInstallationClient(owner string) (*GithubClient, error) {
-	client, ok := m.githubClients[owner]
+// Get an access token for an installation of the access token Github App.
+func (m *Manager) getAccessToken(owner string) (string, error) {
+	token, ok := m.accessTokens[owner]
 	if !ok {
-		return nil, fmt.Errorf("the github app is not installed for user or org: '%s'", owner)
+		return "", fmt.Errorf("the access token app is not installed for user or org: '%s'", owner)
+	}
+	return token, nil
+}
+
+// Get a Github client for the deploy key Github App.
+func (m *Manager) getInstallationClient(owner string) (*GithubClient, error) {
+	client, ok := m.deployKeyClients[owner]
+	if !ok {
+		return nil, fmt.Errorf("the deploy key app is not installed for user or org: '%s'", owner)
 	}
 	return &client, nil
 }
 
-// ListKeys for a repository.
-func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	client, err := m.GetInstallationClient(repository.Owner)
+// List deploy keys for a repository
+func (m *Manager) listKeys(repository Repository) ([]*github.Key, error) {
+	client, err := m.getInstallationClient(repository.Owner)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +164,9 @@ func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
 	return keys, nil
 }
 
-// CreateKey for a repository.
-func (m *Manager) CreateKey(repository Repository, title, publicKey string) error {
-	client, err := m.GetInstallationClient(repository.Owner)
+// Create deploy key for a repository
+func (m *Manager) createKey(repository Repository, title, publicKey string) error {
+	client, err := m.getInstallationClient(repository.Owner)
 	if err != nil {
 		return err
 	}
@@ -145,9 +182,9 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) erro
 	return err
 }
 
-// DeleteKey for a repository.
-func (m *Manager) DeleteKey(repository Repository, id int) error {
-	client, err := m.GetInstallationClient(repository.Owner)
+// Delete a deploy key.
+func (m *Manager) deleteKey(repository Repository, id int) error {
+	client, err := m.getInstallationClient(repository.Owner)
 	if err != nil {
 		return err
 	}
@@ -155,8 +192,8 @@ func (m *Manager) DeleteKey(repository Repository, id int) error {
 	return err
 }
 
-// WriteSecret to secrets manager.
-func (m *Manager) WriteSecret(name, secret string) error {
+// Write a secret to secrets manager.
+func (m *Manager) writeSecret(name, secret string) error {
 	var err error
 
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
@@ -183,8 +220,8 @@ func (m *Manager) WriteSecret(name, secret string) error {
 	return err
 }
 
-// GenerateKeyPair to use as deploy key.
-func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey string, err error) {
+// Generate a key pair for the deploy key.
+func (m *Manager) generateKeyPair(title string) (privateKey string, publicKey string, err error) {
 	// Have EC2 Generate a new private key
 	res, err := m.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: aws.String(title),

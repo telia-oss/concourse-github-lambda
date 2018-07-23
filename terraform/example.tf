@@ -9,12 +9,14 @@ data "aws_caller_identity" "current" {}
 module "github-lambda" {
   source = "./modules/lambda"
 
-  name_prefix            = "github-lambda"
-  filename               = "../concourse-github-lambda.zip"
-  github_prefix          = "concourse"
-  secrets_manager_prefix = "concourse"
-  github_integration_id  = "sm:///concourse-github-lambda/github/integration-id"
-  github_private_key     = "sm:///concourse-github-lambda/github/private-key"
+  name_prefix                  = "github-lambda"
+  filename                     = "../concourse-github-lambda.zip"
+  github_prefix                = "concourse"
+  secrets_manager_prefix       = "concourse"
+  token_service_integration_id = "sm:///concourse-github-lambda/access-token-app/integration-id"
+  token_service_private_key    = "sm:///concourse-github-lambda/access-token-app/private-key"
+  key_service_integration_id   = "sm:///concourse-github-lambda/deploy-key-app/integration-id"
+  key_service_private_key      = "sm:///concourse-github-lambda/deploy-key-app/private-key"
 
   tags {
     environment = "dev"

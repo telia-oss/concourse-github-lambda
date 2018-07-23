@@ -19,12 +19,20 @@ variable "github_prefix" {
   default     = "concourse"
 }
 
-variable "github_integration_id" {
-  description = "Github App integration ID."
+variable "token_service_integration_id" {
+  description = "Integration ID for the access token Github App."
 }
 
-variable "github_private_key" {
-  description = "Github App private key."
+variable "token_service_private_key" {
+  description = "Private key for the access token Github App."
+}
+
+variable "key_service_integration_id" {
+  description = "Integration ID for the deploy key Github App."
+}
+
+variable "key_service_private_key" {
+  description = "Private key for the deploy key Github App."
 }
 
 variable "tags" {

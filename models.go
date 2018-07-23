@@ -7,6 +7,19 @@ import (
 	"text/template"
 )
 
+// Team represents the configuration for a single CI/CD team.
+type Team struct {
+	Name         string       `json:"name"`
+	Repositories []Repository `json:"repositories"`
+}
+
+// Repository represents the configuration of a repository.
+type Repository struct {
+	Name     string        `json:"name"`
+	Owner    string        `json:"owner"`
+	ReadOnly BooleanString `json:"readOnly"`
+}
+
 // BooleanString because terraform has their own booleans.
 type BooleanString bool
 
@@ -24,23 +37,11 @@ func (b *BooleanString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Repository represents the configuration of a repository.
-type Repository struct {
-	Name     string        `json:"name"`
-	Owner    string        `json:"owner"`
-	ReadOnly BooleanString `json:"readOnly"`
-}
-
-// Team represents the configuration for a single CI/CD team.
-type Team struct {
-	Name         string       `json:"name"`
-	Repositories []Repository `json:"repositories"`
-}
-
 // NewTemplate for github key title and secrets manager path.
-func NewTemplate(team, repository, template string) *Template {
+func NewTemplate(team, repository, owner, template string) *Template {
 	return &Template{
 		Team:       team,
+		Owner:      owner,
 		Repository: repository,
 		Template:   template,
 	}
@@ -49,6 +50,7 @@ func NewTemplate(team, repository, template string) *Template {
 // Template ...
 type Template struct {
 	Team       string
+	Owner      string
 	Repository string
 	Template   string
 }

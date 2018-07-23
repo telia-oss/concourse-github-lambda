@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jessevdk/go-flags"
@@ -13,25 +11,14 @@ import (
 
 // Command options
 type Command struct {
-	Region        string `long:"region" env:"REGION" description:"AWS region to use for API calls."`
-	Path          string `long:"secrets-manager-path" env:"SECRETS_MANAGER_PATH" default:"/concourse/{{.Team}}/{{.Repository}}-deploy-key" description:"Path to use when writing to AWS Secrets manager."`
-	Title         string `long:"github-title" env:"GITHUB_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Template for Github title."`
-	IntegrationID int    `long:"github-integration-id" env:"GITHUB_INTEGRATION_ID" description:"Integration ID for the Github App."`
-	PrivateKey    string `long:"github-private-key" env:"GITHUB_PRIVATE_KEY" description:"Private key for the Github App."`
-}
-
-// Validate the Command options.
-func (c *Command) Validate() error {
-	if c.Region == "" {
-		return errors.New("missing required argument 'region'")
-	}
-	if c.PrivateKey == "" {
-		return errors.New("missing required argument 'github-private-key'")
-	}
-	if c.IntegrationID == 0 {
-		return errors.New("missing required argument 'github-integration-id'")
-	}
-	return nil
+	Region                    string `env:"REGION" description:"AWS region to use for API calls."`
+	TokenPath                 string `env:"SECRETS_MANAGER_TOKEN_PATH" default:"/concourse/{{.Team}}/{{.Owner}}-access-token" description:"Path to use when writing access tokens to AWS Secrets manager."`
+	KeyPath                   string `env:"SECRETS_MANAGER_KEY_PATH" default:"/concourse/{{.Team}}/{{.Repository}}-deploy-key" description:"Path to use when writing private keys to AWS Secrets manager."`
+	KeyTitle                  string `env:"GITHUB_KEY_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Title to use when adding deploy keys to Github."`
+	TokenServiceIntegrationID int    `env:"GITHUB_TOKEN_SERVICE_INTEGRATION_ID" description:"Integration ID for the access token Github App." required:"true"`
+	TokenServicePrivateKey    string `env:"GITHUB_TOKEN_SERVICE_PRIVATE_KEY" description:"Private key for the access token Github App." required:"true"`
+	KeyServiceIntegrationID   int    `env:"GITHUB_KEY_SERVICE_INTEGRATION_ID" description:"Integration ID for the deploy key Github App." required:"true"`
+	KeyServicePrivateKey      string `env:"GITHUB_KEY_SERVICE_PRIVATE_KEY" description:"Private key for the deploy key Github App." required:"true"`
 }
 
 var logger *logrus.Logger
@@ -63,17 +50,21 @@ func main() {
 	if err != nil {
 		logger.Fatalf("failed to parse flag: %s", err)
 	}
-	if err := command.Validate(); err != nil {
-		logger.Fatalf("invalid command: %s", err)
-	}
 
 	// Create new manager
-	manager, err := handler.NewManager(sess, command.Region, command.IntegrationID, command.PrivateKey)
+	manager, err := handler.NewManager(
+		sess,
+		command.Region,
+		command.TokenServiceIntegrationID,
+		command.TokenServicePrivateKey,
+		command.KeyServiceIntegrationID,
+		command.KeyServicePrivateKey,
+	)
 	if err != nil {
 		logger.Fatalf("failed to create new manager: %s", err)
 	}
 
 	// Run
-	f := handler.New(manager, command.Path, command.Title, logger)
+	f := handler.New(manager, command.TokenPath, command.KeyPath, command.KeyTitle, logger)
 	lambda.Start(f)
 }
