@@ -13,10 +13,10 @@ module "github-lambda" {
   filename                     = "../concourse-github-lambda.zip"
   github_prefix                = "concourse"
   secrets_manager_prefix       = "concourse"
-  token_service_integration_id = "sm:///concourse-github-lambda/access-token-app/integration-id"
-  token_service_private_key    = "sm:///concourse-github-lambda/access-token-app/private-key"
-  key_service_integration_id   = "sm:///concourse-github-lambda/deploy-key-app/integration-id"
-  key_service_private_key      = "sm:///concourse-github-lambda/deploy-key-app/private-key"
+  token_service_integration_id = "sm:///concourse-github-lambda/token-service/integration-id"
+  token_service_private_key    = "sm:///concourse-github-lambda/token-service/private-key"
+  key_service_integration_id   = "sm:///concourse-github-lambda/key-service/integration-id"
+  key_service_private_key      = "sm:///concourse-github-lambda/key-service/private-key"
 
   tags {
     environment = "dev"
@@ -39,7 +39,7 @@ data "aws_iam_policy_document" "secrets" {
     ]
 
     resources = [
-      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:/concourse-github-lambda/github/*",
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:/concourse-github-lambda/*/*",
     ]
   }
 }
