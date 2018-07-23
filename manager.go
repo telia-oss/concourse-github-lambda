@@ -67,10 +67,10 @@ type Manager struct {
 func NewManager(
 	sess *session.Session,
 	region string,
-	keyServiceIntegrationID int,
-	keyServicePrivateKey string,
 	tokenServiceIntegrationID int,
 	tokenServicePrivateKey string,
+	keyServiceIntegrationID int,
+	keyServicePrivateKey string,
 ) (*Manager, error) {
 	accessTokens, err := createInstallationTokens(tokenServiceIntegrationID, tokenServicePrivateKey)
 	if err != nil {
