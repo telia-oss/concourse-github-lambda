@@ -53,8 +53,8 @@
     "service/ssm/ssmiface",
     "service/sts"
   ]
-  revision = "bc3f534c19ffdf835e524e11f0f825b3eaf541c3"
-  version = "v1.14.31"
+  revision = "468b9714c11f10b22e533253b35eb9c28f4be691"
+  version = "v1.14.32"
 
 [[projects]]
   name = "github.com/bradleyfalzon/ghinstallation"
