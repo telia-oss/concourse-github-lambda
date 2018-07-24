@@ -69,7 +69,7 @@ func NewManager(
 		return nil, fmt.Errorf("failed to create client for token service: %s", err)
 	}
 
-	keyService, err := newGithubApp(tokenServiceIntegrationID, tokenServicePrivateKey)
+	keyService, err := newGithubApp(keyServiceIntegrationID, keyServicePrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client for key service: %s", err)
 	}
