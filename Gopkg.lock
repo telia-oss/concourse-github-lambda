@@ -121,8 +121,8 @@
 [[projects]]
   name = "github.com/telia-oss/aws-env"
   packages = ["."]
-  revision = "8cc46c23237dd47296559f52f578eef50a6a8e03"
-  version = "v0.2.0"
+  revision = "6c57964dbfe9eddff3c18e4d617150499b2d5ae2"
+  version = "v0.3.0"
 
 [[projects]]
   branch = "master"
