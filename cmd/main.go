@@ -11,7 +11,6 @@ import (
 
 // Command options
 type Command struct {
-	Region                    string `long:"region" env:"REGION" description:"AWS region to use for API calls."`
 	TokenPath                 string `long:"token-path" env:"SECRETS_MANAGER_TOKEN_PATH" default:"/concourse/{{.Team}}/{{.Owner}}-access-token" description:"Path to use when writing access tokens to AWS Secrets manager."`
 	KeyPath                   string `long:"key-path" env:"SECRETS_MANAGER_KEY_PATH" default:"/concourse/{{.Team}}/{{.Repository}}-deploy-key" description:"Path to use when writing private keys to AWS Secrets manager."`
 	KeyTitle                  string `long:"key-title" env:"GITHUB_KEY_TITLE" default:"concourse-{{.Team}}-deploy-key" description:"Title to use when adding deploy keys to Github."`
@@ -54,7 +53,6 @@ func main() {
 	// Create new manager
 	manager, err := handler.NewManager(
 		sess,
-		command.Region,
 		command.TokenServiceIntegrationID,
 		command.TokenServicePrivateKey,
 		command.KeyServiceIntegrationID,

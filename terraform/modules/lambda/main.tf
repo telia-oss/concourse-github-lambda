@@ -16,7 +16,6 @@ module "lambda" {
   runtime     = "go1.x"
 
   environment {
-    REGION                              = "${data.aws_region.current.name}"
     SECRETS_MANAGER_TOKEN_PATH          = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Owner}}-access-token"
     SECRETS_MANAGER_KEY_PATH            = "/${var.secrets_manager_prefix}/{{.Team}}/{{.Repository}}-deploy-key"
     GITHUB_KEY_TITLE                    = "${var.github_prefix}-{{.Team}}-deploy-key"

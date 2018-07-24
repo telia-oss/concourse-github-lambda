@@ -58,7 +58,6 @@ type Manager struct {
 // NewManager creates a new manager for handling rotation of Github deploy keys and access tokens.
 func NewManager(
 	sess *session.Session,
-	region string,
 	tokenServiceIntegrationID int,
 	tokenServicePrivateKey string,
 	keyServiceIntegrationID int,
@@ -74,12 +73,11 @@ func NewManager(
 		return nil, fmt.Errorf("failed to create client for key service: %s", err)
 	}
 
-	config := &aws.Config{Region: aws.String(region)}
 	return &Manager{
 		tokenService:  tokenService,
 		keyService:    keyService,
-		secretsClient: secretsmanager.New(sess, config),
-		ec2Client:     ec2.New(sess, config),
+		secretsClient: secretsmanager.New(sess, nil),
+		ec2Client:     ec2.New(sess, nil),
 	}, nil
 }
 
