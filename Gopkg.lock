@@ -137,7 +137,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "a2144134853fc9a27a7b1e3eb4f19f1a76df13c9"
+  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
 
 [[projects]]
   branch = "master"
@@ -155,7 +155,7 @@
     ".",
     "internal"
   ]
-  revision = "ef147856a6ddbb60760db74283d2424e98c87bff"
+  revision = "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
 
 [[projects]]
   branch = "master"
@@ -164,7 +164,7 @@
     "unix",
     "windows"
   ]
-  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
+  revision = "e072cadbbdc8dd3d3ffa82b8b4b9304c261d9311"
 
 [[projects]]
   name = "google.golang.org/appengine"
