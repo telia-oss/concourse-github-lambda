@@ -80,7 +80,7 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 
 			// Write an access token for the organisation
 			if _, ok := tokenAdded[repository.Owner]; !ok {
-				token, err := manager.getAccessToken(repository.Owner)
+				token, err := manager.createAccessToken(repository.Owner)
 				if err != nil {
 					log.Warnf("failed to get access token: %s", err)
 					continue

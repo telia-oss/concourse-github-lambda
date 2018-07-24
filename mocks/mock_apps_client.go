@@ -34,6 +34,20 @@ func (m *MockAppsClient) EXPECT() *MockAppsClientMockRecorder {
 	return m.recorder
 }
 
+// CreateInstallationToken mocks base method
+func (m *MockAppsClient) CreateInstallationToken(arg0 context.Context, arg1 int64) (*github.InstallationToken, *github.Response, error) {
+	ret := m.ctrl.Call(m, "CreateInstallationToken", arg0, arg1)
+	ret0, _ := ret[0].(*github.InstallationToken)
+	ret1, _ := ret[1].(*github.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// CreateInstallationToken indicates an expected call of CreateInstallationToken
+func (mr *MockAppsClientMockRecorder) CreateInstallationToken(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstallationToken", reflect.TypeOf((*MockAppsClient)(nil).CreateInstallationToken), arg0, arg1)
+}
+
 // ListRepos mocks base method
 func (m *MockAppsClient) ListRepos(arg0 context.Context, arg1 *github.ListOptions) ([]*github.Repository, *github.Response, error) {
 	ret := m.ctrl.Call(m, "ListRepos", arg0, arg1)

@@ -67,6 +67,7 @@ func TestHandler(t *testing.T) {
 			repos.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 
 			apps := mocks.NewMockAppsClient(ctrl)
+			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any()).Times(1).Return(&github.InstallationToken{Token: github.String("token")}, nil, nil)
 
 			ec2 := mocks.NewMockEC2Client(ctrl)
 			ec2.EXPECT().CreateKeyPair(gomock.Any()).Times(1).Return(tc.createdKey, nil)
@@ -76,11 +77,14 @@ func TestHandler(t *testing.T) {
 			secrets.EXPECT().CreateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 
-			client := map[string]handler.GithubClient{
-				owner: {Repos: repos, Apps: apps},
+			// TODO: If we want to test teams with multiple repos we'll need to create installations/clients in a loop.
+			services := &handler.GithubApp{
+				App:           apps,
+				Installations: map[string]int64{tc.team.Repositories[0].Owner: 1},
+				Clients:       map[string]*handler.GithubClient{tc.team.Repositories[0].Owner: {Apps: apps, Repos: repos}},
 			}
 			logger, _ := logrus.NewNullLogger()
-			handle := handler.New(handler.NewTestManager(client, secrets, ec2), tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
+			handle := handler.New(handler.NewTestManager(secrets, ec2, services, services), tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)
