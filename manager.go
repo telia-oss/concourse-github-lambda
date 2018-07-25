@@ -76,8 +76,8 @@ func NewManager(
 	return &Manager{
 		tokenService:  tokenService,
 		keyService:    keyService,
-		secretsClient: secretsmanager.New(sess, nil),
-		ec2Client:     ec2.New(sess, nil),
+		secretsClient: secretsmanager.New(sess),
+		ec2Client:     ec2.New(sess),
 	}, nil
 }
 
