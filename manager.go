@@ -17,63 +17,94 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/google/go-github/github"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/oauth2"
 )
 
-// GithubManager for testing purposes
-//go:generate mockgen -destination=mocks/mock_github_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda GithubManager
-type GithubManager interface {
+// RepoClient for testing purposes
+//go:generate mockgen -destination=mocks/mock_repo_client.go -package=mocks github.com/telia-oss/concourse-github-lambda RepoClient
+type RepoClient interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
 	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
 }
 
-// SecretsManager for testing purposes.
-//go:generate mockgen -destination=mocks/mock_secrets_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsManager
-type SecretsManager secretsmanageriface.SecretsManagerAPI
+// AppsClient for testing purposes
+//go:generate mockgen -destination=mocks/mock_apps_client.go -package=mocks github.com/telia-oss/concourse-github-lambda AppsClient
+type AppsClient interface {
+	ListRepos(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error)
+	CreateInstallationToken(ctx context.Context, id int64) (*github.InstallationToken, *github.Response, error)
+}
 
-// EC2Manager for testing purposes.
-//go:generate mockgen -destination=mocks/mock_ec2_manager.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Manager
-type EC2Manager ec2iface.EC2API
+// SecretsClient for testing purposes.
+//go:generate mockgen -destination=mocks/mock_secrets_client.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsClient
+type SecretsClient secretsmanageriface.SecretsManagerAPI
+
+// EC2Client for testing purposes.
+//go:generate mockgen -destination=mocks/mock_ec2_client.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Client
+type EC2Client ec2iface.EC2API
+
+// NewTestManager for testing purposes.
+func NewTestManager(s SecretsClient, e EC2Client, tokenService, keyService *GithubApp) *Manager {
+	return &Manager{secretsClient: s, ec2Client: e, tokenService: tokenService, keyService: keyService}
+}
 
 // Manager handles API calls to AWS.
 type Manager struct {
-	githubClient  GithubManager
-	secretsClient SecretsManager
-	ec2Client     EC2Manager
+	tokenService  *GithubApp
+	keyService    *GithubApp
+	secretsClient SecretsClient
+	ec2Client     EC2Client
 }
 
-// NewManager creates a new manager from a session, region and Github access token.
-func NewManager(sess *session.Session, region, token string) *Manager {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
-
-	config := &aws.Config{Region: aws.String(region)}
-	return &Manager{
-		githubClient:  github.NewClient(tc).Repositories,
-		secretsClient: secretsmanager.New(sess, config),
-		ec2Client:     ec2.New(sess, config),
+// NewManager creates a new manager for handling rotation of Github deploy keys and access tokens.
+func NewManager(
+	sess *session.Session,
+	tokenServiceIntegrationID int,
+	tokenServicePrivateKey string,
+	keyServiceIntegrationID int,
+	keyServicePrivateKey string,
+) (*Manager, error) {
+	tokenService, err := newGithubApp(tokenServiceIntegrationID, tokenServicePrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client for token service: %s", err)
 	}
+
+	keyService, err := newGithubApp(keyServiceIntegrationID, keyServicePrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client for key service: %s", err)
+	}
+
+	return &Manager{
+		tokenService:  tokenService,
+		keyService:    keyService,
+		secretsClient: secretsmanager.New(sess),
+		ec2Client:     ec2.New(sess),
+	}, nil
 }
 
-// NewTestManager ...
-func NewTestManager(g GithubManager, s SecretsManager, e EC2Manager) *Manager {
-	return &Manager{githubClient: g, secretsClient: s, ec2Client: e}
+// Create an access token for the organisation
+func (m *Manager) createAccessToken(owner string) (string, error) {
+	return m.tokenService.createInstallationToken(owner)
 }
 
-// ListKeys for a repository.
-func (m *Manager) ListKeys(repository Repository) ([]*github.Key, error) {
-	keys, _, err := m.githubClient.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
+// List deploy keys for a repository
+func (m *Manager) listKeys(repository Repository) ([]*github.Key, error) {
+	client, err := m.keyService.getInstallationClient(repository.Owner)
+	if err != nil {
+		return nil, err
+	}
+	keys, _, err := client.Repos.ListKeys(context.TODO(), repository.Owner, repository.Name, nil)
 	if err != nil {
 		return nil, err
 	}
 	return keys, nil
 }
 
-// CreateKey for a repository.
-func (m *Manager) CreateKey(repository Repository, title, publicKey string) error {
+// Create deploy key for a repository
+func (m *Manager) createKey(repository Repository, title, publicKey string) error {
+	client, err := m.keyService.getInstallationClient(repository.Owner)
+	if err != nil {
+		return err
+	}
 	input := &github.Key{
 		ID:       nil,
 		Key:      github.String(publicKey),
@@ -82,18 +113,22 @@ func (m *Manager) CreateKey(repository Repository, title, publicKey string) erro
 		ReadOnly: github.Bool(bool(repository.ReadOnly)),
 	}
 
-	_, _, err := m.githubClient.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
+	_, _, err = client.Repos.CreateKey(context.TODO(), repository.Owner, repository.Name, input)
 	return err
 }
 
-// DeleteKey for a repository.
-func (m *Manager) DeleteKey(repository Repository, id int) error {
-	_, err := m.githubClient.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
+// Delete a deploy key.
+func (m *Manager) deleteKey(repository Repository, id int) error {
+	client, err := m.keyService.getInstallationClient(repository.Owner)
+	if err != nil {
+		return err
+	}
+	_, err = client.Repos.DeleteKey(context.TODO(), repository.Owner, repository.Name, id)
 	return err
 }
 
-// WriteSecret to secrets manager.
-func (m *Manager) WriteSecret(name, secret string) error {
+// Write a secret to secrets manager.
+func (m *Manager) writeSecret(name, secret string) error {
 	var err error
 
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
@@ -113,15 +148,15 @@ func (m *Manager) WriteSecret(name, secret string) error {
 	timestamp := time.Now().Format(time.RFC3339)
 
 	_, err = m.secretsClient.UpdateSecret(&secretsmanager.UpdateSecretInput{
-		Description:  aws.String(fmt.Sprintf("Github deploy key for Concourse. Last updated: %s", timestamp)),
+		Description:  aws.String(fmt.Sprintf("Github credentials for Concourse. Last updated: %s", timestamp)),
 		SecretId:     aws.String(name),
 		SecretString: aws.String(secret),
 	})
 	return err
 }
 
-// GenerateKeyPair to use as deploy key.
-func (m *Manager) GenerateKeyPair(title string) (privateKey string, publicKey string, err error) {
+// Generate a key pair for the deploy key.
+func (m *Manager) generateKeyPair(title string) (privateKey string, publicKey string, err error) {
 	// Have EC2 Generate a new private key
 	res, err := m.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: aws.String(title),

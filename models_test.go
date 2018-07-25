@@ -89,6 +89,7 @@ func TestTemplate(t *testing.T) {
 		description string
 		template    string
 		team        string
+		owner       string
 		repository  string
 		expected    string
 		shouldError bool
@@ -97,14 +98,25 @@ func TestTemplate(t *testing.T) {
 			description: "template works as intended",
 			template:    "/concourse/{{.Team}}/{{.Repository}}-deploy-key",
 			team:        "TEAM",
+			owner:       "OWNER",
 			repository:  "REPOSITORY",
 			expected:    "/concourse/TEAM/REPOSITORY-deploy-key",
+			shouldError: false,
+		},
+		{
+			description: "template supports owner",
+			template:    "/concourse/{{.Team}}/{{.Owner}}-access-token",
+			team:        "TEAM",
+			owner:       "OWNER",
+			repository:  "REPOSITORY",
+			expected:    "/concourse/TEAM/OWNER-access-token",
 			shouldError: false,
 		},
 		{
 			description: "fails if the template expects more parameters",
 			template:    "/concourse/{{.Team}}/{{.Repository}}/{{.Something}}",
 			team:        "TEAM",
+			owner:       "OWNER",
 			repository:  "REPOSITORY",
 			expected:    "",
 			shouldError: true,
@@ -113,7 +125,7 @@ func TestTemplate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			got, err := handler.NewTemplate(tc.team, tc.repository, tc.template).String()
+			got, err := handler.NewTemplate(tc.team, tc.repository, tc.owner, tc.template).String()
 
 			if tc.shouldError && err == nil {
 				t.Fatal("expected an error to occur")

@@ -19,8 +19,20 @@ variable "github_prefix" {
   default     = "concourse"
 }
 
-variable "github_token" {
-  description = "Access token which grants access to Github API for the repositories."
+variable "token_service_integration_id" {
+  description = "Integration ID for the access token Github App."
+}
+
+variable "token_service_private_key" {
+  description = "Private key for the access token Github App."
+}
+
+variable "key_service_integration_id" {
+  description = "Integration ID for the deploy key Github App."
+}
+
+variable "key_service_private_key" {
+  description = "Private key for the deploy key Github App."
 }
 
 variable "tags" {

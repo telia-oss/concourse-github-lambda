@@ -58,3 +58,33 @@ Example configuration for a Team (which is then passed as input in the CloudWatc
 When the function is triggered with the above input, it will create
 a deploy key for `telia-oss/concourse-github-lambda` and write
 the private key to `/concourse/example-team/concourse-github-lambda-deploy-key`.
+
+### Required secrets 
+
+We recommend using secrets manager or SSM (over KMS). See below for an example of 
+setting up the required secrets using Secrets Manager:
+
+```bash
+aws secretsmanager create-secret \
+  --name /concourse-github-lambda/token-service/integration-id \
+  --secret-string "13024" \
+  --region eu-west-1
+
+aws secretsmanager create-secret \
+  --name /concourse-github-lambda/token-service/private-key \
+  --secret-string file:///Users/someone/Downloads/concourse-github-token-service.pem \
+  --region eu-west-1
+
+aws secretsmanager create-secret \
+  --name /concourse-github-lambda/key-service/integration-id \
+  --secret-string "13025" \
+  --region eu-west-1
+
+aws secretsmanager create-secret \
+  --name /concourse-github-lambda/key-service/private-key \
+  --secret-string file:///Users/someone/Downloads/concourse-github-key-service.pem \
+  --region eu-west-1
+```
+
+To update the values, use `update-secret` and `--secret-id` instead of `create-secret` and `--name`.
+Otherwise the arguments can remain the same.
