@@ -1,7 +1,6 @@
 package handler_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -39,7 +38,7 @@ func TestHandler(t *testing.T) {
 		keyTitle     string
 		team         handler.Team
 		githubKeys   []*github.Key
-		lastUpdated  string
+		lastUpdated  time.Time
 		shouldRotate bool
 		createdKey   *ec2.CreateKeyPairOutput
 	}{
@@ -56,7 +55,7 @@ func TestHandler(t *testing.T) {
 					Title: github.String("concourse-test-team-deploy-key"),
 				},
 			},
-			lastUpdated:  "2018-01-01T01:01:01Z",
+			lastUpdated:  time.Now().AddDate(0, 0, -10),
 			shouldRotate: true,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
@@ -74,26 +73,8 @@ func TestHandler(t *testing.T) {
 					Title: github.String("concourse-test-team-deploy-key"),
 				},
 			},
-			lastUpdated:  time.Now().Format(time.RFC3339),
+			lastUpdated:  time.Now(),
 			shouldRotate: false,
-			createdKey: &ec2.CreateKeyPairOutput{
-				KeyMaterial: aws.String(keyMaterial),
-			},
-		},
-		{
-			description: "rotates if timestamp cannot be parsed",
-			tokenPath:   "/concourse/{{.Team}}/{{.Owner}}",
-			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
-			keyTitle:    "concourse-{{.Team}}-deploy-key",
-			team:        team,
-			githubKeys: []*github.Key{
-				{
-					ID:    github.Int64(1),
-					Title: github.String("concourse-test-team-deploy-key"),
-				},
-			},
-			lastUpdated:  "nil",
-			shouldRotate: true,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
 			},
@@ -122,7 +103,7 @@ func TestHandler(t *testing.T) {
 			}
 
 			secrets := mocks.NewMockSecretsClient(ctrl)
-			description := &secretsmanager.DescribeSecretOutput{Description: aws.String(fmt.Sprintf("Github credentials for Concourse. Last updated: %s", tc.lastUpdated))}
+			description := &secretsmanager.DescribeSecretOutput{LastChangedDate: aws.Time(tc.lastUpdated)}
 			secrets.EXPECT().DescribeSecret(gomock.Any()).MinTimes(1).Return(description, nil)
 			secrets.EXPECT().CreateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)

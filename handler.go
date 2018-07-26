@@ -1,9 +1,6 @@
 package handler
 
 import (
-	"errors"
-	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -68,18 +65,11 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 					oldKey = key
 
 					// Make sure the deploy key is old enough to need rotating
-					description, err := manager.describeSecret(keyPath)
+					updated, err := manager.describeSecret(keyPath)
 					if err != nil {
 						log.Warnf("failed to describe secret: %s", err)
 						break
 					}
-
-					updated, err := parseUpdatedDate(description)
-					if err != nil {
-						log.Warnf("failed to parse updated date: %s", err)
-						break
-					}
-
 					if updated.After(time.Now().AddDate(0, 0, -7)) {
 						continue Loop
 					}
@@ -117,20 +107,4 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 		}
 		return nil
 	}
-}
-
-func parseUpdatedDate(description string) (*time.Time, error) {
-	r, err := regexp.Compile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]{1}\d{2}:\d{2})`)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile regexp: %s", err)
-	}
-	match := r.FindStringSubmatch(description)
-	if match == nil {
-		return nil, errors.New("could not locate timestamp in description")
-	}
-	updated, err := time.Parse(time.RFC3339, match[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse timestamp: %s", err)
-	}
-	return &updated, nil
 }
