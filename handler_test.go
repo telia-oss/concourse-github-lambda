@@ -80,6 +80,24 @@ func TestHandler(t *testing.T) {
 				KeyMaterial: aws.String(keyMaterial),
 			},
 		},
+		{
+			description: "rotates if timestamp cannot be parsed",
+			tokenPath:   "/concourse/{{.Team}}/{{.Owner}}",
+			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
+			keyTitle:    "concourse-{{.Team}}-deploy-key",
+			team:        team,
+			githubKeys: []*github.Key{
+				{
+					ID:    github.Int64(1),
+					Title: github.String("concourse-test-team-deploy-key"),
+				},
+			},
+			lastUpdated:  "nil",
+			shouldRotate: true,
+			createdKey: &ec2.CreateKeyPairOutput{
+				KeyMaterial: aws.String(keyMaterial),
+			},
+		},
 	}
 
 	for _, tc := range tests {

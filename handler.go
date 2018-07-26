@@ -71,13 +71,13 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 					description, err := manager.describeSecret(keyPath)
 					if err != nil {
 						log.Warnf("failed to describe secret: %s", err)
-						continue Loop
+						break
 					}
 
 					updated, err := parseUpdatedDate(description)
 					if err != nil {
 						log.Warnf("failed to parse updated date: %s", err)
-						continue Loop
+						break
 					}
 
 					if updated.After(time.Now().AddDate(0, 0, -7)) {
@@ -120,7 +120,7 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 }
 
 func parseUpdatedDate(description string) (*time.Time, error) {
-	r, err := regexp.Compile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`)
+	r, err := regexp.Compile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]{1}\d{2}:\d{2})`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile regexp: %s", err)
 	}
