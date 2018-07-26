@@ -11,6 +11,8 @@ import (
 func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, logger *logrus.Logger) func(Team) error {
 	return func(team Team) error {
 		tokenAdded := make(map[string]bool)
+
+	Loop:
 		for _, repository := range team.Repositories {
 			log := logger.WithFields(logrus.Fields{
 				"team":       team.Name,
@@ -36,7 +38,21 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 				continue
 			}
 
-			// Look for existing keys for the team
+			// Write an access token for the organisation
+			if _, ok := tokenAdded[repository.Owner]; !ok {
+				token, err := manager.createAccessToken(repository.Owner)
+				if err != nil {
+					log.Warnf("failed to get access token: %s", err)
+					continue
+				}
+				if err := manager.writeSecret(tokenPath, token); err != nil {
+					log.Warnf("failed to write access token: %s", err)
+					continue
+				}
+				tokenAdded[repository.Owner] = true
+			}
+
+			// Look for existing keys belongning to the team
 			keys, err := manager.listKeys(repository)
 			if err != nil {
 				log.Warnf("failed to list github keys: %s", err)
@@ -47,6 +63,20 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 			for _, key := range keys {
 				if *key.Title == title {
 					oldKey = key
+
+					// Rotate the key if read/write permissions have changed
+					if key.ReadOnly != nil && *key.ReadOnly != bool(repository.ReadOnly) {
+						break
+					}
+					// Do not rotate if nothing has changed and the key is not >7 days old
+					updated, err := manager.describeSecret(keyPath)
+					if err != nil {
+						log.Warnf("failed to describe secret: %s", err)
+						break
+					}
+					if updated.After(time.Now().AddDate(0, 0, -7)) {
+						continue Loop
+					}
 				}
 			}
 
@@ -78,19 +108,6 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 				}
 			}
 
-			// Write an access token for the organisation
-			if _, ok := tokenAdded[repository.Owner]; !ok {
-				token, err := manager.createAccessToken(repository.Owner)
-				if err != nil {
-					log.Warnf("failed to get access token: %s", err)
-					continue
-				}
-				if err := manager.writeSecret(tokenPath, token); err != nil {
-					log.Warnf("failed to write access token: %s", err)
-					continue
-				}
-				tokenAdded[repository.Owner] = true
-			}
 		}
 		return nil
 	}

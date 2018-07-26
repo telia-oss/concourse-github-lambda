@@ -2,6 +2,9 @@ package handler_test
 
 import (
 	"testing"
+	"time"
+
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -29,13 +32,15 @@ func TestHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		description string
-		tokenPath   string
-		keyPath     string
-		keyTitle    string
-		team        handler.Team
-		githubKeys  []*github.Key
-		createdKey  *ec2.CreateKeyPairOutput
+		description       string
+		tokenPath         string
+		keyPath           string
+		keyTitle          string
+		team              handler.Team
+		existingKey       *github.Key
+		secretLastUpdated time.Time
+		shouldRotate      bool
+		createdKey        *ec2.CreateKeyPairOutput
 	}{
 
 		{
@@ -44,12 +49,47 @@ func TestHandler(t *testing.T) {
 			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
 			keyTitle:    "concourse-{{.Team}}-deploy-key",
 			team:        team,
-			githubKeys: []*github.Key{
-				{
-					ID:    github.Int64(1),
-					Title: github.String("concourse-test-team-deploy-key"),
-				},
+			existingKey: &github.Key{
+				ID:       github.Int64(1),
+				Title:    github.String("concourse-test-team-deploy-key"),
+				ReadOnly: github.Bool(true),
 			},
+			secretLastUpdated: time.Now().AddDate(0, 0, -10),
+			shouldRotate:      true,
+			createdKey: &ec2.CreateKeyPairOutput{
+				KeyMaterial: aws.String(keyMaterial),
+			},
+		},
+		{
+			description: "does not rotate keys if they have recently been updated",
+			tokenPath:   "/concourse/{{.Team}}/{{.Owner}}",
+			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
+			keyTitle:    "concourse-{{.Team}}-deploy-key",
+			team:        team,
+			existingKey: &github.Key{
+				ID:       github.Int64(1),
+				Title:    github.String("concourse-test-team-deploy-key"),
+				ReadOnly: github.Bool(true),
+			},
+			secretLastUpdated: time.Now(),
+			shouldRotate:      false,
+			createdKey: &ec2.CreateKeyPairOutput{
+				KeyMaterial: aws.String(keyMaterial),
+			},
+		},
+		{
+			description: "rotates recently updated keys if the desired permissions have changed",
+			tokenPath:   "/concourse/{{.Team}}/{{.Owner}}",
+			keyPath:     "/concourse/{{.Team}}/{{.Repository}}",
+			keyTitle:    "concourse-{{.Team}}-deploy-key",
+			team:        team,
+			existingKey: &github.Key{
+				ID:       github.Int64(1),
+				Title:    github.String("concourse-test-team-deploy-key"),
+				ReadOnly: github.Bool(false),
+			},
+			secretLastUpdated: time.Now(),
+			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
 			},
@@ -62,18 +102,26 @@ func TestHandler(t *testing.T) {
 			defer ctrl.Finish()
 
 			repos := mocks.NewMockRepoClient(ctrl)
-			repos.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tc.githubKeys, nil, nil)
-			repos.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
-			repos.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+			repos.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]*github.Key{tc.existingKey}, nil, nil)
+			if tc.shouldRotate {
+				repos.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
+				repos.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+			}
 
 			apps := mocks.NewMockAppsClient(ctrl)
 			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any()).Times(1).Return(&github.InstallationToken{Token: github.String("token")}, nil, nil)
 
 			ec2 := mocks.NewMockEC2Client(ctrl)
-			ec2.EXPECT().CreateKeyPair(gomock.Any()).Times(1).Return(tc.createdKey, nil)
-			ec2.EXPECT().DeleteKeyPair(gomock.Any()).Times(1)
+			if tc.shouldRotate {
+				ec2.EXPECT().CreateKeyPair(gomock.Any()).Times(1).Return(tc.createdKey, nil)
+				ec2.EXPECT().DeleteKeyPair(gomock.Any()).Times(1)
+			}
 
 			secrets := mocks.NewMockSecretsClient(ctrl)
+			description := &secretsmanager.DescribeSecretOutput{LastChangedDate: aws.Time(tc.secretLastUpdated)}
+			if *tc.existingKey.ReadOnly == bool(tc.team.Repositories[0].ReadOnly) {
+				secrets.EXPECT().DescribeSecret(gomock.Any()).MinTimes(1).Return(description, nil)
+			}
 			secrets.EXPECT().CreateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 			secrets.EXPECT().UpdateSecret(gomock.Any()).MinTimes(1).Return(nil, nil)
 
