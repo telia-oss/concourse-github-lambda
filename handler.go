@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -11,6 +14,8 @@ import (
 func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, logger *logrus.Logger) func(Team) error {
 	return func(team Team) error {
 		tokenAdded := make(map[string]bool)
+
+	Loop:
 		for _, repository := range team.Repositories {
 			log := logger.WithFields(logrus.Fields{
 				"team":       team.Name,
@@ -36,7 +41,21 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 				continue
 			}
 
-			// Look for existing keys for the team
+			// Write an access token for the organisation
+			if _, ok := tokenAdded[repository.Owner]; !ok {
+				token, err := manager.createAccessToken(repository.Owner)
+				if err != nil {
+					log.Warnf("failed to get access token: %s", err)
+					continue
+				}
+				if err := manager.writeSecret(tokenPath, token); err != nil {
+					log.Warnf("failed to write access token: %s", err)
+					continue
+				}
+				tokenAdded[repository.Owner] = true
+			}
+
+			// Look for existing keys belongning to the team
 			keys, err := manager.listKeys(repository)
 			if err != nil {
 				log.Warnf("failed to list github keys: %s", err)
@@ -47,6 +66,23 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 			for _, key := range keys {
 				if *key.Title == title {
 					oldKey = key
+
+					// Make sure the deploy key is old enough to need rotating
+					description, err := manager.describeSecret(keyPath)
+					if err != nil {
+						log.Warnf("failed to describe secret: %s", err)
+						continue Loop
+					}
+
+					updated, err := parseUpdatedDate(description)
+					if err != nil {
+						log.Warnf("failed to parse updated date: %s", err)
+						continue Loop
+					}
+
+					if updated.After(time.Now().AddDate(0, 0, -7)) {
+						continue Loop
+					}
 				}
 			}
 
@@ -78,20 +114,23 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 				}
 			}
 
-			// Write an access token for the organisation
-			if _, ok := tokenAdded[repository.Owner]; !ok {
-				token, err := manager.createAccessToken(repository.Owner)
-				if err != nil {
-					log.Warnf("failed to get access token: %s", err)
-					continue
-				}
-				if err := manager.writeSecret(tokenPath, token); err != nil {
-					log.Warnf("failed to write access token: %s", err)
-					continue
-				}
-				tokenAdded[repository.Owner] = true
-			}
 		}
 		return nil
 	}
+}
+
+func parseUpdatedDate(description string) (*time.Time, error) {
+	r, err := regexp.Compile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compile regexp: %s", err)
+	}
+	match := r.FindStringSubmatch(description)
+	if match == nil {
+		return nil, errors.New("could not locate timestamp in description")
+	}
+	updated, err := time.Parse(time.RFC3339, match[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp: %s", err)
+	}
+	return &updated, nil
 }
