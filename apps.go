@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
@@ -42,7 +43,7 @@ func newGithubApp(integrationID int, privateKey string) (*GithubApp, error) {
 		if owner == "" {
 			return nil, fmt.Errorf("failed to get owner for installation: %d", i.GetID())
 		}
-		installs[owner] = i.GetID()
+		installs[strings.ToLower(owner)] = i.GetID()
 	}
 
 	return &GithubApp{
@@ -53,6 +54,7 @@ func newGithubApp(integrationID int, privateKey string) (*GithubApp, error) {
 }
 
 func (a *GithubApp) createInstallationToken(owner string) (token string, err error) {
+	owner = strings.ToLower(owner)
 	id, ok := a.Installations[owner]
 	if !ok {
 		return token, fmt.Errorf("the deploy key app is not installed for user or org: '%s'", owner)
@@ -66,6 +68,7 @@ func (a *GithubApp) createInstallationToken(owner string) (token string, err err
 }
 
 func (a *GithubApp) getInstallationClient(owner string) (client *GithubClient, err error) {
+	owner = strings.ToLower(owner)
 	if _, ok := a.Clients[owner]; !ok {
 		token, err := a.createInstallationToken(owner)
 		if err != nil {
