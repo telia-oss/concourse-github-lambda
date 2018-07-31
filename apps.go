@@ -74,7 +74,7 @@ func (a *GithubApp) getInstallationClient(owner string) (client *GithubClient, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to get installation token: %s", err)
 		}
-		oauth := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		oauth := oauth2.NewClient(context.TODO(), oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: token},
 		))
 		client := github.NewClient(oauth)
