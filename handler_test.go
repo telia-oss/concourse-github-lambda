@@ -32,15 +32,17 @@ func TestHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		description       string
-		tokenPath         string
-		keyPath           string
-		keyTitle          string
-		team              handler.Team
-		existingKey       *github.Key
-		secretLastUpdated time.Time
-		shouldRotate      bool
-		createdKey        *ec2.CreateKeyPairOutput
+		description        string
+		tokenPath          string
+		keyPath            string
+		keyTitle           string
+		team               handler.Team
+		existingKey        *github.Key
+		clientExpiration   time.Time
+		shouldCreateClient bool // We can't test this without first mocking the createClient calls.
+		secretLastUpdated  time.Time
+		shouldRotate       bool
+		createdKey         *ec2.CreateKeyPairOutput
 	}{
 
 		{
@@ -54,6 +56,7 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
+			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now().AddDate(0, 0, -10),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
@@ -71,8 +74,8 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
+			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now(),
-			shouldRotate:      false,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
 			},
@@ -88,6 +91,7 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(false),
 			},
+			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now(),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
@@ -101,15 +105,18 @@ func TestHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
+			newTokenExpiration := time.Now().Add(1 * time.Hour)
+			newToken := &github.InstallationToken{Token: github.String("token"), ExpiresAt: &newTokenExpiration}
+
+			apps := mocks.NewMockAppsClient(ctrl)
+			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any()).MinTimes(1).Return(newToken, nil, nil)
+
 			repos := mocks.NewMockRepoClient(ctrl)
 			repos.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]*github.Key{tc.existingKey}, nil, nil)
 			if tc.shouldRotate {
 				repos.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil, nil)
 				repos.EXPECT().DeleteKey(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 			}
-
-			apps := mocks.NewMockAppsClient(ctrl)
-			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any()).Times(1).Return(&github.InstallationToken{Token: github.String("token")}, nil, nil)
 
 			ec2 := mocks.NewMockEC2Client(ctrl)
 			if tc.shouldRotate {
@@ -129,7 +136,7 @@ func TestHandler(t *testing.T) {
 			services := &handler.GithubApp{
 				App:           apps,
 				Installations: map[string]int64{tc.team.Repositories[0].Owner: 1},
-				Clients:       map[string]*handler.GithubClient{tc.team.Repositories[0].Owner: {Apps: apps, Repos: repos}},
+				Clients:       map[string]*handler.GithubClient{tc.team.Repositories[0].Owner: {Apps: apps, Repos: repos, Expiration: tc.clientExpiration}},
 			}
 			logger, _ := logrus.NewNullLogger()
 			handle := handler.New(handler.NewTestManager(secrets, ec2, services, services), tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
