@@ -83,7 +83,8 @@ func NewManager(
 
 // Create an access token for the organisation
 func (m *Manager) createAccessToken(owner string) (string, error) {
-	return m.tokenService.createInstallationToken(owner)
+	token, _, err := m.tokenService.createInstallationToken(owner)
+	return token, err
 }
 
 // List deploy keys for a repository
