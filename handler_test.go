@@ -138,8 +138,9 @@ func TestHandler(t *testing.T) {
 				Installations: map[string]int64{tc.team.Repositories[0].Owner: 1},
 				Clients:       map[string]*handler.GithubClient{tc.team.Repositories[0].Owner: {Apps: apps, Repos: repos, Expiration: tc.clientExpiration}},
 			}
+			manager := handler.NewTestManager(secrets, ec2, services, services)
 			logger, _ := logrus.NewNullLogger()
-			handle := handler.New(handler.NewTestManager(secrets, ec2, services, services), tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
+			handle := handler.New(manager, tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)
