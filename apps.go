@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
@@ -13,8 +14,13 @@ import (
 
 // GithubClient ...
 type GithubClient struct {
-	Repos RepoClient
-	Apps  AppsClient
+	Expiration time.Time
+	Repos      RepoClient
+	Apps       AppsClient
+}
+
+func (c *GithubClient) isExpired() bool {
+	return c.Expiration.Before(time.Now().Add(1 * time.Minute))
 }
 
 // GithubApp ...
@@ -53,24 +59,24 @@ func newGithubApp(integrationID int, privateKey string) (*GithubApp, error) {
 	}, nil
 }
 
-func (a *GithubApp) createInstallationToken(owner string) (token string, err error) {
+func (a *GithubApp) createInstallationToken(owner string) (token string, expiration time.Time, err error) {
 	owner = strings.ToLower(owner)
 	id, ok := a.Installations[owner]
 	if !ok {
-		return token, fmt.Errorf("the deploy key app is not installed for user or org: '%s'", owner)
+		return token, expiration, fmt.Errorf("the deploy key app is not installed for user or org: '%s'", owner)
 	}
 	installationToken, _, err := a.App.CreateInstallationToken(context.TODO(), id)
 	if err != nil {
-		return token, fmt.Errorf("failed to create token: %s", err)
+		return token, expiration, fmt.Errorf("failed to create token: %s", err)
 	}
-	token = installationToken.GetToken()
-	return token, nil
+	token, expiration = installationToken.GetToken(), installationToken.GetExpiresAt()
+	return token, expiration, nil
 }
 
 func (a *GithubApp) getInstallationClient(owner string) (client *GithubClient, err error) {
 	owner = strings.ToLower(owner)
-	if _, ok := a.Clients[owner]; !ok {
-		token, err := a.createInstallationToken(owner)
+	if c, ok := a.Clients[owner]; !ok || c.isExpired() {
+		token, expiration, err := a.createInstallationToken(owner)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get installation token: %s", err)
 		}
@@ -79,8 +85,9 @@ func (a *GithubApp) getInstallationClient(owner string) (client *GithubClient, e
 		))
 		client := github.NewClient(oauth)
 		a.Clients[owner] = &GithubClient{
-			Repos: client.Repositories,
-			Apps:  client.Apps,
+			Repos:      client.Repositories,
+			Apps:       client.Apps,
+			Expiration: expiration,
 		}
 	}
 	client, _ = a.Clients[owner]
