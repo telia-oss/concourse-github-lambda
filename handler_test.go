@@ -32,17 +32,15 @@ func TestHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		description        string
-		tokenPath          string
-		keyPath            string
-		keyTitle           string
-		team               handler.Team
-		existingKey        *github.Key
-		clientExpiration   time.Time
-		shouldCreateClient bool // We can't test this without first mocking the createClient calls.
-		secretLastUpdated  time.Time
-		shouldRotate       bool
-		createdKey         *ec2.CreateKeyPairOutput
+		description       string
+		tokenPath         string
+		keyPath           string
+		keyTitle          string
+		team              handler.Team
+		existingKey       *github.Key
+		secretLastUpdated time.Time
+		shouldRotate      bool
+		createdKey        *ec2.CreateKeyPairOutput
 	}{
 
 		{
@@ -56,7 +54,6 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
-			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now().AddDate(0, 0, -10),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
@@ -74,7 +71,6 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
-			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now(),
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
@@ -91,7 +87,6 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(false),
 			},
-			clientExpiration:  time.Now().Add(1 * time.Hour),
 			secretLastUpdated: time.Now(),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
@@ -136,7 +131,13 @@ func TestHandler(t *testing.T) {
 			services := &handler.GithubApp{
 				App:           apps,
 				Installations: map[string]int64{tc.team.Repositories[0].Owner: 1},
-				Clients:       map[string]*handler.GithubClient{tc.team.Repositories[0].Owner: {Apps: apps, Repos: repos, Expiration: tc.clientExpiration}},
+				Clients: map[string]*handler.GithubClient{
+					tc.team.Repositories[0].Owner: {
+						Apps:       apps,
+						Repos:      repos,
+						Expiration: time.Now().Add(1 * time.Hour),
+					},
+				},
 			}
 			manager := handler.NewTestManager(secrets, ec2, services, services)
 			logger, _ := logrus.NewNullLogger()
