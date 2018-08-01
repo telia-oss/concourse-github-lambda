@@ -20,7 +20,7 @@ type GithubClient struct {
 }
 
 func (c *GithubClient) isExpired() bool {
-	return c.Expiration.Before(time.Now())
+	return c.Expiration.Before(time.Now().Add(1 * time.Minute))
 }
 
 // GithubApp ...
