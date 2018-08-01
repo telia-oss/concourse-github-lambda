@@ -19,7 +19,7 @@ type GithubClient struct {
 	Apps       AppsClient
 }
 
-func (c *GithubClient) expired() bool {
+func (c *GithubClient) isExpired() bool {
 	return c.Expiration.Before(time.Now())
 }
 
@@ -75,7 +75,7 @@ func (a *GithubApp) createInstallationToken(owner string) (token string, expirat
 
 func (a *GithubApp) getInstallationClient(owner string) (client *GithubClient, err error) {
 	owner = strings.ToLower(owner)
-	if c, ok := a.Clients[owner]; !ok || c.expired() {
+	if c, ok := a.Clients[owner]; !ok || c.isExpired() {
 		token, expiration, err := a.createInstallationToken(owner)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get installation token: %s", err)
