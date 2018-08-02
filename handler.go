@@ -3,6 +3,8 @@ package handler
 import (
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/google/go-github/github"
 	"github.com/sirupsen/logrus"
 )
@@ -71,7 +73,12 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 					// Do not rotate if nothing has changed and the key is not >7 days old
 					updated, err := manager.getLastChanged(keyPath)
 					if err != nil {
-						log.Warnf("failed to describe secret: %s", err)
+						if e, ok := err.(awserr.Error); ok {
+							if e.Code() != secretsmanager.ErrCodeResourceNotFoundException {
+								// Do not log a warning if we fail to describe because the secret does not exist.
+								log.Warnf("failed to describe secret: %s", err)
+							}
+						}
 						break
 					}
 					if updated.After(time.Now().AddDate(0, 0, -7)) {
