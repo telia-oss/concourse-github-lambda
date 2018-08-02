@@ -128,8 +128,8 @@ func (m *Manager) deleteKey(repository Repository, id int) error {
 	return err
 }
 
-// Write a secret to secrets manager.
-func (m *Manager) describeSecret(name string) (*time.Time, error) {
+// Get the LastChanged time for the secret.
+func (m *Manager) getLastChanged(name string) (*time.Time, error) {
 	out, err := m.secretsClient.DescribeSecret(&secretsmanager.DescribeSecretInput{
 		SecretId: aws.String(name),
 	})

@@ -69,7 +69,7 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 						break
 					}
 					// Do not rotate if nothing has changed and the key is not >7 days old
-					updated, err := manager.describeSecret(keyPath)
+					updated, err := manager.getLastChanged(keyPath)
 					if err != nil {
 						log.Warnf("failed to describe secret: %s", err)
 						break
