@@ -2,12 +2,13 @@
 
 [![Build Status](https://travis-ci.org/telia-oss/concourse-github-lambda.svg?branch=master)](https://travis-ci.org/telia-oss/concourse-github-lambda)
 
-Lambda function to rotate Github deploy keys used by Concourse teams. See
+Lambda function for handling Github access tokens and deploy keys used by Concourse teams. See
 the terraform subdirectory for an example that should work (with minimal effort).
 
 ### Why?
 
-Our CI/CD (in our case Concourse) needs deploy keys to fetch code from Github.
+Our CI/CD (in our case Concourse) needs deploy keys to fetch code from Github, and
+access tokens to set statuses on commits or comment on pull requests.
 Instead of having teams do this manually, we can use this Lambda and simply pass
 a list of repositories that the team requires access to, and deploy keys will be
 generated and written to Secrets Manager (where it is available to their pipelines).
@@ -15,21 +16,17 @@ generated and written to Secrets Manager (where it is available to their pipelin
 ### How?
 
 1. This Lambda function is deployed to the same account as our Concourse.
-2. It is given a personal access key tied to a machine user.
-3. A team adds a CloudWatch event rule with the configuration for which
-repositories they need access to.
-4. Lambda creates a deploy key and rotates it every 7 days.
+2. It is given an integration ID and private key for two separate [Github Apps](https://developer.github.com/apps/).
+3. A team adds a CloudWatch event rule with the configuration for which repositories they need access to, and under which 
+organisation. 
+4. The lambda creates/rotates an access token and deploy key for each team, every 30min and 7 days respectively.
 
 ### Usage
 
-Be in the root directory:
-
-```bash
-make release
-```
-
-You should now have a zipped Lambda function. Next, edit [terraform/example.tf](./terraform/example.tf)
-to your liking. When done, be in the terraform directory:
+After you have checked out the [prerequisites](#prerequisites), either download a zip from the 
+[releases](https://github.com/telia-oss/concourse-github-lambda/releases), or build it yourself by 
+running `make release` in the root of this repository. After you have a binary, you can edit 
+[terraform/example.tf](./terraform/example.tf) to your liking and deploy the example by running:
 
 ```bash
 terraform init
@@ -55,14 +52,39 @@ Example configuration for a Team (which is then passed as input in the CloudWatc
 }
 ```
 
-When the function is triggered with the above input, it will create
-a deploy key for `telia-oss/concourse-github-lambda` and write
-the private key to `/concourse/example-team/concourse-github-lambda-deploy-key`.
+When the function is triggered with the above input, it will create a deploy key for `telia-oss/concourse-github-lambda`,
+write a private key to `/concourse/example-team/concourse-github-lambda-deploy-key` and access token to 
+`/concourse/example-team/telia-oss-access-token`.
 
-### Required secrets 
+### Prerequisites
 
-We recommend using secrets manager or SSM (over KMS). See below for an example of 
-setting up the required secrets using Secrets Manager:
+#### Github Apps
+
+
+This Lambda requires credentials for two separate Github Apps in order to generate deploy keys and access tokens. See the 
+official documentation on [Creating a Github App](https://developer.github.com/apps/building-github-apps/creating-a-github-app/),
+and grant them the following permissions:
+
+- key-service (generates deploy keys): [Repository administration (`write`)](https://developer.github.com/v3/apps/permissions/#permission-on-administration)
+- token-service (generates access tokens): ... any permissions really, or no permissions if you prefer that.
+
+E.g., to make use of all the features in [github-pr-resource](https://github.com/telia-oss/github-pr-resource)), you'll need
+the following permissions for the `token-service`:
+  - [statuses (`write`)](https://developer.github.com/v3/apps/permissions/#permission-on-statuses)
+  - [pull requests (`write`)](https://developer.github.com/v3/apps/permissions/#permission-on-pull-requests)
+  - [repository contents (`read`)](https://developer.github.com/v3/apps/permissions/#permission-on-contents)
+
+Note that we went with two Github Apps because we did not want to generate access tokens from the `key-service` app, because
+the token would have admin access to all repositories where the app was installed, and unfortunately have not found a way
+to further scope down the privileges of the generated tokens. The compromise then is to have a 2nd github app (`token-service`) which has less dangerous permissions, which we can then use to generate the access tokens.
+
+#### Secrets
+
+This lambda uses [aws-env](https://github.com/telia-oss/aws-env) to securely populate environment variables
+with their values from either AWS Secrets manager, SSM Parameter store or KMS. This makes it easy to handle
+credentials in a safe manner, and we recommend using secrets manager or SSM (over KMS) to pass the Github Apps
+credentials to the lambda function. Below is an example of setting up the required secrets for the example,
+using Secrets Manager:
 
 ```bash
 aws secretsmanager create-secret \
