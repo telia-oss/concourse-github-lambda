@@ -1,3 +1,9 @@
+#InteliJ IDE files
+.idea/
+
+# Test coverage report
+coverage.out
+
 **/.terraform
 **/*.tfstate*
 main
