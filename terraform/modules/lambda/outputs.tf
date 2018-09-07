@@ -5,8 +5,8 @@ output "role_arn" {
   value = "${module.lambda.role_arn}"
 }
 
-output "role_name" {
-  value = "${module.lambda.role_name}"
+output "role_id" {
+  value = "${module.lambda.role_id}"
 }
 
 output "function_arn" {
