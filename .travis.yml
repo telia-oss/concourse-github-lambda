@@ -15,13 +15,27 @@ before_install:
 notifications:
   email: false
 script:
-- make release && make test
+- make test
+- make build
 deploy:
-  provider: releases
-  api_key:
-    secure: JgSZ2H3hnw3BRR8rUmodrULqorbdfjdYW2EU0rk5pCBVfmUeypsGFk+BikJK4Rca9fFAYs1TN6GpBeBMVCsAIIrzdXxbDcKsKGcCCO5Aka+mQXI9MFb0cbtstP8NmC75PmasjnAzuS0taMQNiNRek5FfYnZ+SoHmmffBCyU9/3iYN8wsaJM08fF/AW1Zval+UwXPqE2NCr42RqJakU6Dj95kUQSXtktPxwCOjCt6ImN3YXGRpGbuhYYe6VLehJ/U9PZZ11gw4IUOyCbQlCtZV/GvEanG/NWrqPxxtdLTrWgDyiYO1W/76ysEhHwakaR8Pm7bSM830MJYgTv16ZkHhy5Of+bD/cDLg8koVwVahqTHpY3uBYwuRQxKNvzu6L2M219jHAPJYusU28xRjXOFUjsT/mfTPaA1W4iMPWZcUWIk3yjo+7GW7+3vmC7d1BTpAHjpnGxbm8tzPNTJvYGj07rGefz7dk6A/jWzp9IYWpu4lIKRT5+8nvLoFmeD7PZaglQa8R5NlrjkUtbx+i0lcycxlPo2EaHJrd6VlwUGyvXFPJScxTo6QdqEQ2Pplir3xk0e//8UluNgXczsQdbYIcDRLCsj2OWQTKipxR1Nymmjq7T9t8RKufoqRGTjcuhudYUWl+W6cWEpFpaj/4mBCyhCIHfPXj27u9Mf1zybcag=
-  file: concourse-github-lambda.zip
-  skip_cleanup: true
-  on:
-    repo: telia-oss/concourse-github-lambda
-    tags: true
+  - provider: s3
+    access_key_id: AKIAIXXEON53QC2UQBPA
+    secret_access_key:
+      secure: JIboEjMPFam09m6bXXLrdC7wiXIwFJxo7czcs4zvTwkQYYQIBbU1urCOR88IcPAkYWkIzd1sN4lsQbd7Z0OvZpJLVPS1tIEBVnKwDotA4fzpFbFDzVx7V4Q8/T3Gaptx+IzZA8aUFop2phyaW6v6WOHqWv0oSEoBT86Dt4DmjokFfMNqeppoH5vNnEtus5lNoRF3l3DvLrKklRw1pR2dcROifOLKQRsa/C531Uc0O5dNzicNeiYQaSoNWmC1Snu6x1W0VfEEgkE7MshuoHzpFCSkj4aSecj9+83jw44EmUNrVI5PdWp1FSzrY3NeRX8VNeAAe1HI7OblAHPEm+Yp3gqpG/czuwy+bRNYu/J8V8FHfLDuLUUqZA7aU2qrx9i2u0P8VjNc0H9nECD8TxmK393Cw4YMDErt3IxG/CrA8zSboLsCVRy/ligaf4Ykvr7QIQoERsNhgQ7dpOva07ykVrW7UIm/olpQoXki8FmKTsENQPqir33N7x0hpju+Ag8D93bGyEiZa1H9vBOpLXEn6AT60dVNKBN/PR59Zhey/MW72iOsO0G+Smur8+9buQnQ+YsPNvHVPqD6PbS9PnokjPngjNd28tZBOug9e0mt0UOE6fJVmtu1Bbq10I/tl6OqveUf/uI9DGZWLh58F7Z9gj87U7ihKCk0hY+h24HxMDs=
+    bucket: telia-oss
+    region: eu-west-1
+    local-dir: build
+    upload-dir: concourse-github-lambda
+    acl: public_read
+    skip_cleanup: true
+    on:
+      repo: telia-oss/concourse-github-lambda
+      tags: true
+  - provider: releases
+    api_key:
+      secure: JgSZ2H3hnw3BRR8rUmodrULqorbdfjdYW2EU0rk5pCBVfmUeypsGFk+BikJK4Rca9fFAYs1TN6GpBeBMVCsAIIrzdXxbDcKsKGcCCO5Aka+mQXI9MFb0cbtstP8NmC75PmasjnAzuS0taMQNiNRek5FfYnZ+SoHmmffBCyU9/3iYN8wsaJM08fF/AW1Zval+UwXPqE2NCr42RqJakU6Dj95kUQSXtktPxwCOjCt6ImN3YXGRpGbuhYYe6VLehJ/U9PZZ11gw4IUOyCbQlCtZV/GvEanG/NWrqPxxtdLTrWgDyiYO1W/76ysEhHwakaR8Pm7bSM830MJYgTv16ZkHhy5Of+bD/cDLg8koVwVahqTHpY3uBYwuRQxKNvzu6L2M219jHAPJYusU28xRjXOFUjsT/mfTPaA1W4iMPWZcUWIk3yjo+7GW7+3vmC7d1BTpAHjpnGxbm8tzPNTJvYGj07rGefz7dk6A/jWzp9IYWpu4lIKRT5+8nvLoFmeD7PZaglQa8R5NlrjkUtbx+i0lcycxlPo2EaHJrd6VlwUGyvXFPJScxTo6QdqEQ2Pplir3xk0e//8UluNgXczsQdbYIcDRLCsj2OWQTKipxR1Nymmjq7T9t8RKufoqRGTjcuhudYUWl+W6cWEpFpaj/4mBCyhCIHfPXj27u9Mf1zybcag=
+    file: concourse-github-lambda.zip
+    skip_cleanup: true
+    on:
+      repo: telia-oss/concourse-github-lambda
+      tags: true
