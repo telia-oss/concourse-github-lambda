@@ -10,7 +10,6 @@ module "github-lambda" {
   source = "./modules/lambda"
 
   name_prefix                  = "github-lambda"
-  filename                     = "../concourse-github-lambda.zip"
   github_prefix                = "concourse"
   secrets_manager_prefix       = "concourse"
   token_service_integration_id = "sm:///concourse-github-lambda/token-service/integration-id"
