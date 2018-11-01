@@ -1,11 +1,11 @@
+TRAVIS_TAG ?= $(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 BINARY      = main
 RELEASE     = $(TRAVIS_TAG).zip
 TARGET     ?= linux
 ARCH       ?= amd64
 
-TRAVIS_TAG ?= $(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
-SRC         = $(filter-out vendor/*, $(wildcard *.go))
-DIR         = $(shell pwd)
+SRC = $(filter-out vendor/*, $(wildcard *.go))
+DIR = $(shell pwd)
 
 export GO111MODULE=on
 
