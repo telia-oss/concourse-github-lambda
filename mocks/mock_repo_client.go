@@ -49,7 +49,7 @@ func (mr *MockRepoClientMockRecorder) CreateKey(arg0, arg1, arg2, arg3 interface
 }
 
 // DeleteKey mocks base method
-func (m *MockRepoClient) DeleteKey(arg0 context.Context, arg1, arg2 string, arg3 int) (*github.Response, error) {
+func (m *MockRepoClient) DeleteKey(arg0 context.Context, arg1, arg2 string, arg3 int64) (*github.Response, error) {
 	ret := m.ctrl.Call(m, "DeleteKey", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*github.Response)
 	ret1, _ := ret[1].(error)
