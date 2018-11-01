@@ -109,7 +109,7 @@ func New(manager *Manager, tokenTemplate, keyTemplate, titleTemplate string, log
 			// Sleep before deleting old key (in case someone has just fetched the old key)
 			if oldKey != nil {
 				time.Sleep(time.Second * 1)
-				if err = manager.deleteKey(repository, int(*oldKey.ID)); err != nil {
+				if err = manager.deleteKey(repository, *oldKey.ID); err != nil {
 					log.Warnf("failed to delete old github key: %d: %s", *oldKey.ID, err)
 					continue
 				}

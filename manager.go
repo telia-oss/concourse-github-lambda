@@ -24,7 +24,7 @@ import (
 type RepoClient interface {
 	ListKeys(ctx context.Context, owner string, repo string, opt *github.ListOptions) ([]*github.Key, *github.Response, error)
 	CreateKey(ctx context.Context, owner string, repo string, key *github.Key) (*github.Key, *github.Response, error)
-	DeleteKey(ctx context.Context, owner string, repo string, id int) (*github.Response, error)
+	DeleteKey(ctx context.Context, owner string, repo string, id int64) (*github.Response, error)
 }
 
 // AppsClient for testing purposes
@@ -119,7 +119,7 @@ func (m *Manager) createKey(repository Repository, title, publicKey string) erro
 }
 
 // Delete a deploy key.
-func (m *Manager) deleteKey(repository Repository, id int) error {
+func (m *Manager) deleteKey(repository Repository, id int64) error {
 	client, err := m.keyService.getInstallationClient(repository.Owner)
 	if err != nil {
 		return err
