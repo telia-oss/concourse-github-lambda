@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,7 +39,7 @@ func TestHandler(t *testing.T) {
 		keyTitle          string
 		team              handler.Team
 		existingKey       *github.Key
-		secretLastUpdated time.Time
+		secretLastUpdated string
 		shouldRotate      bool
 		createdKey        *ec2.CreateKeyPairOutput
 	}{
@@ -54,7 +55,7 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
-			secretLastUpdated: time.Now().AddDate(0, 0, -10),
+			secretLastUpdated: time.Now().AddDate(0, 0, -10).UTC().Format(time.RFC3339),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
@@ -71,7 +72,7 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(true),
 			},
-			secretLastUpdated: time.Now(),
+			secretLastUpdated: time.Now().UTC().Format(time.RFC3339),
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
 			},
@@ -87,7 +88,7 @@ func TestHandler(t *testing.T) {
 				Title:    github.String("concourse-test-team-deploy-key"),
 				ReadOnly: github.Bool(false),
 			},
-			secretLastUpdated: time.Now(),
+			secretLastUpdated: time.Now().UTC().Format(time.RFC3339),
 			shouldRotate:      true,
 			createdKey: &ec2.CreateKeyPairOutput{
 				KeyMaterial: aws.String(keyMaterial),
@@ -120,7 +121,9 @@ func TestHandler(t *testing.T) {
 			}
 
 			secrets := mocks.NewMockSecretsClient(ctrl)
-			description := &secretsmanager.DescribeSecretOutput{LastChangedDate: aws.Time(tc.secretLastUpdated)}
+			description := &secretsmanager.DescribeSecretOutput{
+				Description: aws.String(fmt.Sprintf("Github credentials for Concourse. Last updated: %s", tc.secretLastUpdated)),
+			}
 			if *tc.existingKey.ReadOnly == bool(tc.team.Repositories[0].ReadOnly) {
 				secrets.EXPECT().DescribeSecret(gomock.Any()).MinTimes(1).Return(description, nil)
 			}
@@ -140,11 +143,18 @@ func TestHandler(t *testing.T) {
 				},
 			}
 			manager := handler.NewTestManager(secrets, ec2, services, services)
-			logger, _ := logrus.NewNullLogger()
+			logger, hook := logrus.NewNullLogger()
 			handle := handler.New(manager, tc.tokenPath, tc.keyPath, tc.keyTitle, logger)
 
 			if err := handle(tc.team); err != nil {
 				t.Fatalf("unexpected error: %s", err)
+			}
+
+			// Look for warning, error, fatal and panic level logs
+			for _, e := range hook.AllEntries() {
+				if e.Level <= 3 {
+					t.Errorf("unexpected log severity: '%s': %s", e.Level.String(), e.Message)
+				}
 			}
 		})
 	}
