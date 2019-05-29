@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -128,21 +129,36 @@ func (m *Manager) deleteKey(repository Repository, id int64) error {
 	return err
 }
 
-// Get the LastChanged time for the secret.
-func (m *Manager) getLastChanged(name string) (*time.Time, error) {
+// Get the time the secret was last updated by this lambda from the secret description.
+// Note that we are not using LastChangedDate from secrets manager because in practice
+// this timestamp is updated daily by the inner workings of secrets manager.
+func (m *Manager) getLastUpdated(name string) (*time.Time, error) {
 	out, err := m.secretsClient.DescribeSecret(&secretsmanager.DescribeSecretInput{
 		SecretId: aws.String(name),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return out.LastChangedDate, nil
+
+	re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)
+	ds := re.FindString(aws.StringValue(out.Description))
+
+	if ds == "" {
+		return nil, fmt.Errorf("failed to find timestamp in description: %s", aws.StringValue(out.Description))
+	}
+
+	t, err := time.Parse(time.RFC3339, ds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp: %s", err)
+	}
+
+	return &t, nil
 }
 
 // Write a secret to secrets manager.
 func (m *Manager) writeSecret(name, secret string) error {
 	var err error
-	timestamp := time.Now().Format(time.RFC3339)
+	timestamp := time.Now().UTC().Format(time.RFC3339)
 
 	_, err = m.secretsClient.CreateSecret(&secretsmanager.CreateSecretInput{
 		Name:        aws.String(name),
