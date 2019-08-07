@@ -8,15 +8,16 @@ resource "aws_cloudwatch_event_rule" "main" {
 }
 
 resource "aws_cloudwatch_event_target" "main" {
-  rule  = "${aws_cloudwatch_event_rule.main.name}"
-  arn   = "${var.lambda_arn}"
-  input = "${var.team_config}"
+  rule  = aws_cloudwatch_event_rule.main.name
+  arn   = var.lambda_arn
+  input = var.team_config
 }
 
 resource "aws_lambda_permission" "main" {
   statement_id  = "${var.name_prefix}-github-lambda-permission"
   action        = "lambda:InvokeFunction"
-  function_name = "${var.lambda_arn}"
+  function_name = var.lambda_arn
   principal     = "events.amazonaws.com"
-  source_arn    = "${aws_cloudwatch_event_rule.main.arn}"
+  source_arn    = aws_cloudwatch_event_rule.main.arn
 }
+
