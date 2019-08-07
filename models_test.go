@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/telia-oss/concourse-github-lambda"
+	handler "github.com/telia-oss/concourse-github-lambda"
 )
 
 func TestConfig(t *testing.T) {
@@ -24,7 +24,7 @@ func TestConfig(t *testing.T) {
         {
 			"name": "repo1",
 			"owner": "telia-oss",
-            "readOnly": "true"
+            "readOnly": true
         }
     ]
 }
@@ -35,33 +35,7 @@ func TestConfig(t *testing.T) {
 					{
 						Name:     "repo1",
 						Owner:    "telia-oss",
-						ReadOnly: handler.BooleanString(true),
-					},
-				},
-			},
-		},
-
-		{
-			description: "We can unmarshal terraform booleans",
-			input: strings.TrimSpace(`
-{
-    "name": "team",
-    "repositories": [
-        {
-            "name": "repo2",
-			"owner": "telia-oss",
-            "readOnly": "0"
-        }
-    ]
-}
-`),
-			expected: handler.Team{
-				Name: "team",
-				Repositories: []handler.Repository{
-					{
-						Name:     "repo2",
-						Owner:    "telia-oss",
-						ReadOnly: handler.BooleanString(false),
+						ReadOnly: true,
 					},
 				},
 			},
