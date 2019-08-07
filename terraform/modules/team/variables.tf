@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
 # Variables
 # ------------------------------------------------------------------------------
-variable "name_prefix" {
-  description = "Prefix used for resource names."
+variable "name" {
+  description = "Name of the team (used to give descriptive name to resources)."
   type        = string
 }
 
@@ -11,8 +11,13 @@ variable "lambda_arn" {
   type        = string
 }
 
-variable "team_config" {
+variable "repositories" {
   description = "Valid JSON representation of a Team (see Go code)."
-  type        = string
+  type        = list(object({ name = string, owner = string, readOnly = bool }))
 }
 
+variable "tags" {
+  description = "A map of tags (key-value pairs) passed to resources."
+  type        = map(string)
+  default     = {}
+}

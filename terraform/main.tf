@@ -43,20 +43,17 @@ data "aws_iam_policy_document" "secrets" {
 
 # Each team will need their own Lambda trigger which is CRON triggered
 # and passes that teams configuration to the function when it's invoked.
-module "trigger" {
-  source      = "./modules/trigger"
-  name_prefix = "${var.name_prefix}-team"
-  lambda_arn  = module.lambda.arn
-  team_config = <<EOF
-{
-  "name": "example-team",
-  "repositories": [
+module "team" {
+  source     = "./modules/team"
+  name       = "${var.name_prefix}-team"
+  lambda_arn = module.lambda.arn
+  tags       = var.tags
+
+  repositories = [
     {
-      "name": "go-hooks",
-      "owner": "itsdalmo",
-      "readOnly": "true"
-    }
+      name     = "go-hooks"
+      owner    = "itsdalmo"
+      readOnly = true
+    },
   ]
-}
-EOF
 }
