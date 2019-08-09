@@ -2,9 +2,9 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -12,8 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	"github.com/google/go-github/github"
@@ -39,13 +37,9 @@ type AppsClient interface {
 //go:generate mockgen -destination=mocks/mock_secrets_client.go -package=mocks github.com/telia-oss/concourse-github-lambda SecretsClient
 type SecretsClient secretsmanageriface.SecretsManagerAPI
 
-// EC2Client for testing purposes.
-//go:generate mockgen -destination=mocks/mock_ec2_client.go -package=mocks github.com/telia-oss/concourse-github-lambda EC2Client
-type EC2Client ec2iface.EC2API
-
 // NewTestManager for testing purposes.
-func NewTestManager(s SecretsClient, e EC2Client, tokenService, keyService *GithubApp) *Manager {
-	return &Manager{secretsClient: s, ec2Client: e, tokenService: tokenService, keyService: keyService}
+func NewTestManager(s SecretsClient, tokenService, keyService *GithubApp) *Manager {
+	return &Manager{secretsClient: s, tokenService: tokenService, keyService: keyService}
 }
 
 // Manager handles API calls to AWS.
@@ -53,7 +47,6 @@ type Manager struct {
 	tokenService  *GithubApp
 	keyService    *GithubApp
 	secretsClient SecretsClient
-	ec2Client     EC2Client
 }
 
 // NewManager creates a new manager for handling rotation of Github deploy keys and access tokens.
@@ -78,7 +71,6 @@ func NewManager(
 		tokenService:  tokenService,
 		keyService:    keyService,
 		secretsClient: secretsmanager.New(sess),
-		ec2Client:     ec2.New(sess),
 	}, nil
 }
 
@@ -184,33 +176,13 @@ func (m *Manager) writeSecret(name, secret string) error {
 
 // Generate a key pair for the deploy key.
 func (m *Manager) generateKeyPair(title string) (privateKey string, publicKey string, err error) {
-	// Have EC2 Generate a new private key
-	res, err := m.ec2Client.CreateKeyPair(&ec2.CreateKeyPairInput{
-		KeyName: aws.String(title),
-	})
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return "", "", err
 	}
-
-	// Remember to clean up temporary key when done
-	defer func() {
-		// TODO: Don't discard error, handle it somehow.
-		m.ec2Client.DeleteKeyPair(&ec2.DeleteKeyPairInput{
-			KeyName: aws.String(title),
-		})
-	}()
-	privateKey = aws.StringValue(res.KeyMaterial)
 
 	// Parse the private key
-	block, _ := pem.Decode([]byte(privateKey))
-	if block == nil {
-		return "", "", errors.New("failed to decode private key")
-	}
-
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return "", "", err
-	}
+	privateKey = string(x509.MarshalPKCS1PrivateKey(key))
 
 	public, err := ssh.NewPublicKey(&key.PublicKey)
 	if err != nil {
