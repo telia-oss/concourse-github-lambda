@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-	"strconv"
 	"strings"
 	"text/template"
 )
@@ -15,26 +13,9 @@ type Team struct {
 
 // Repository represents the configuration of a repository.
 type Repository struct {
-	Name     string        `json:"name"`
-	Owner    string        `json:"owner"`
-	ReadOnly BooleanString `json:"readOnly"`
-}
-
-// BooleanString because terraform has their own booleans.
-type BooleanString bool
-
-// UnmarshalJSON for terraform booleans..
-func (b *BooleanString) UnmarshalJSON(data []byte) error {
-	d, err := strconv.Unquote(string(data))
-	if err != nil {
-		return fmt.Errorf("failed to unquote: %s", err)
-	}
-	v, err := strconv.ParseBool(d)
-	if err != nil {
-		return fmt.Errorf("failed to parse bool: %s", err)
-	}
-	*b = BooleanString(v)
-	return nil
+	Name     string `json:"name"`
+	Owner    string `json:"owner"`
+	ReadOnly bool   `json:"readOnly"`
 }
 
 // NewTemplate for github key title and secrets manager path.
