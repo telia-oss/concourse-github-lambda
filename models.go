@@ -24,7 +24,7 @@ func NewTemplate(team, repository, owner, template string) *Template {
 		Team:  team,
 		Owner: owner,
 		// sanitise the secrets manager path as concourse treats dots as delimiters
-		Repository: strings.Replace(repository, ".", "-", -1),
+		Repository: strings.ReplaceAll(repository, ".", "-"),
 		Template:   template,
 	}
 }
