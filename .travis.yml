@@ -1,27 +1,27 @@
 language: go
 
 go:
-  - 1.12.x
+- 1.12.x
 
 env:
-  - GO111MODULE=on
+- GO111MODULE=on
 
 notifications:
   email: false
 
 install:
-  - curl -sL https://taskfile.dev/install.sh | sh
-  - curl -sL https://releases.hashicorp.com/terraform/0.12.6/terraform_0.12.6_linux_amd64.zip -o terraform.zip
-  - sudo unzip terraform.zip -d /usr/bin && rm -f terraform.zip
-  - go install github.com/golang/mock/mockgen
+- curl -sL https://taskfile.dev/install.sh | sh
+- curl -sL https://releases.hashicorp.com/terraform/0.12.6/terraform_0.12.6_linux_amd64.zip -o terraform.zip
+- sudo unzip terraform.zip -d /usr/bin && rm -f terraform.zip
+- go install github.com/golang/mock/mockgen
 
 script:
-  - ./bin/task test build
+- ./bin/task test build
 
 deploy:
   - provider: releases
     api_key:
-      secure: JgSZ2H3hnw3BRR8rUmodrULqorbdfjdYW2EU0rk5pCBVfmUeypsGFk+BikJK4Rca9fFAYs1TN6GpBeBMVCsAIIrzdXxbDcKsKGcCCO5Aka+mQXI9MFb0cbtstP8NmC75PmasjnAzuS0taMQNiNRek5FfYnZ+SoHmmffBCyU9/3iYN8wsaJM08fF/AW1Zval+UwXPqE2NCr42RqJakU6Dj95kUQSXtktPxwCOjCt6ImN3YXGRpGbuhYYe6VLehJ/U9PZZ11gw4IUOyCbQlCtZV/GvEanG/NWrqPxxtdLTrWgDyiYO1W/76ysEhHwakaR8Pm7bSM830MJYgTv16ZkHhy5Of+bD/cDLg8koVwVahqTHpY3uBYwuRQxKNvzu6L2M219jHAPJYusU28xRjXOFUjsT/mfTPaA1W4iMPWZcUWIk3yjo+7GW7+3vmC7d1BTpAHjpnGxbm8tzPNTJvYGj07rGefz7dk6A/jWzp9IYWpu4lIKRT5+8nvLoFmeD7PZaglQa8R5NlrjkUtbx+i0lcycxlPo2EaHJrd6VlwUGyvXFPJScxTo6QdqEQ2Pplir3xk0e//8UluNgXczsQdbYIcDRLCsj2OWQTKipxR1Nymmjq7T9t8RKufoqRGTjcuhudYUWl+W6cWEpFpaj/4mBCyhCIHfPXj27u9Mf1zybcag=
+      secure: U0qhOhvd96fYNVZqIQ8neVqZUiF7FVY58ztIbWbgCKW+q+EwFqnT9yleOPeyhsl0TEvh6N0dYhvnu4vJdUNuLfrBl3g9M8rqyNqsGArJ3Pn1Rymipy5HzfonNcJtEThIBZefzrQcnmMnjJlr8SRZ5JAv0xmiEJshBq3G30sG9+0AbmR33yJXy++uLFyuqHDzrpih4mB8+yTg5wuv4994q33L2fNZbcN6efOJ49nMjnR6tXNzuz7ZzNonHJO1Z4adZHvq/awA3Si0EMZb2x5dQmGQTEDiMiwTnqLSkrQG97zai3MywSPDVOsChZldis6Qu6OADeRLVmRIBypVaK1a5PmsVOZJCOnoeXDVY3WuK4hG5CavP+wvyjNOR/r2Zvu5QgNXGlfNh+O3RUI8yoqUS4Dhg0PuWJRjrlCh0zaUssNMVbJgWAKjHWKRXW4lgUP8HzzLUY2gk0LkAgb6TJf0KWvulQmcRHuzV274MrL1FHTln3fncODvVw3r6PROjQ7JIe3YZXDPawNs8rebSaEAMnRNyolEdMew1nP/lo/9FQt5L5DUBQ0yMVZfaXvnx4Dui8PKAsMTNBwZuXS5hFqoa8LBzoRcRB0yP6tLKIMoXe5k1B+D8GVtOD2J4sgbXWOH6gPho1Q3dit33UOXenKA2lcJVsXH94XGmI1L/K6+tHk=
     file: build/concourse-github-lambda.zip
     skip_cleanup: true
     on:
