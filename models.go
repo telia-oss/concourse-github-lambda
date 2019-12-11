@@ -21,9 +21,10 @@ type Repository struct {
 // NewTemplate for github key title and secrets manager path.
 func NewTemplate(team, repository, owner, template string) *Template {
 	return &Template{
-		Team:       team,
-		Owner:      owner,
-		Repository: repository,
+		Team:  team,
+		Owner: owner,
+		// sanitise the secrets manager path as concourse treats dots as delimiters
+		Repository: strings.ReplaceAll(repository, ".", "-"),
 		Template:   template,
 	}
 }
