@@ -1,22 +1,22 @@
 language: go
 
 go:
-- 1.12.x
+  - 1.12.x
 
 env:
-- GO111MODULE=on
+  - GO111MODULE=on
 
 notifications:
   email: false
 
 install:
-- curl -sL https://taskfile.dev/install.sh | sh
-- curl -sL https://releases.hashicorp.com/terraform/0.12.6/terraform_0.12.6_linux_amd64.zip -o terraform.zip
-- sudo unzip terraform.zip -d /usr/bin && rm -f terraform.zip
-- go install github.com/golang/mock/mockgen
+  - curl -sL https://taskfile.dev/install.sh | sh
+  - curl -sL https://releases.hashicorp.com/terraform/0.12.6/terraform_0.12.6_linux_amd64.zip -o terraform.zip
+  - sudo unzip terraform.zip -d /usr/bin && rm -f terraform.zip
+  - go install github.com/golang/mock/mockgen
 
 script:
-- ./bin/task test build
+  - ./bin/task test build
 
 deploy:
   - provider: releases
