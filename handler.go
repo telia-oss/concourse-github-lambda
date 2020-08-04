@@ -5,7 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	"github.com/sirupsen/logrus"
 )
 

@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -32,7 +32,7 @@ type RepoClient interface {
 //go:generate mockgen -destination=mocks/mock_apps_client.go -package=mocks github.com/telia-oss/concourse-github-lambda AppsClient
 type AppsClient interface {
 	ListRepos(ctx context.Context, opt *github.ListOptions) ([]*github.Repository, *github.Response, error)
-	CreateInstallationToken(ctx context.Context, id int64) (*github.InstallationToken, *github.Response, error)
+	CreateInstallationToken(ctx context.Context, id int64, opts *github.InstallationTokenOptions) (*github.InstallationToken, *github.Response, error)
 }
 
 // SecretsClient for testing purposes.
@@ -59,9 +59,9 @@ type Manager struct {
 // NewManager creates a new manager for handling rotation of Github deploy keys and access tokens.
 func NewManager(
 	sess *session.Session,
-	tokenServiceIntegrationID int,
+	tokenServiceIntegrationID int64,
 	tokenServicePrivateKey string,
-	keyServiceIntegrationID int,
+	keyServiceIntegrationID int64,
 	keyServicePrivateKey string,
 ) (*Manager, error) {
 	tokenService, err := newGithubApp(tokenServiceIntegrationID, tokenServicePrivateKey)
