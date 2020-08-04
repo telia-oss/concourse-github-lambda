@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	github "github.com/google/go-github/github"
+	github "github.com/google/go-github/v29/github"
 	reflect "reflect"
 )
 
@@ -36,6 +36,7 @@ func (m *MockRepoClient) EXPECT() *MockRepoClientMockRecorder {
 
 // CreateKey mocks base method
 func (m *MockRepoClient) CreateKey(arg0 context.Context, arg1, arg2 string, arg3 *github.Key) (*github.Key, *github.Response, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateKey", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*github.Key)
 	ret1, _ := ret[1].(*github.Response)
@@ -45,11 +46,13 @@ func (m *MockRepoClient) CreateKey(arg0 context.Context, arg1, arg2 string, arg3
 
 // CreateKey indicates an expected call of CreateKey
 func (mr *MockRepoClientMockRecorder) CreateKey(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKey", reflect.TypeOf((*MockRepoClient)(nil).CreateKey), arg0, arg1, arg2, arg3)
 }
 
 // DeleteKey mocks base method
 func (m *MockRepoClient) DeleteKey(arg0 context.Context, arg1, arg2 string, arg3 int64) (*github.Response, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteKey", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*github.Response)
 	ret1, _ := ret[1].(error)
@@ -58,11 +61,13 @@ func (m *MockRepoClient) DeleteKey(arg0 context.Context, arg1, arg2 string, arg3
 
 // DeleteKey indicates an expected call of DeleteKey
 func (mr *MockRepoClientMockRecorder) DeleteKey(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteKey", reflect.TypeOf((*MockRepoClient)(nil).DeleteKey), arg0, arg1, arg2, arg3)
 }
 
 // ListKeys mocks base method
 func (m *MockRepoClient) ListKeys(arg0 context.Context, arg1, arg2 string, arg3 *github.ListOptions) ([]*github.Key, *github.Response, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListKeys", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*github.Key)
 	ret1, _ := ret[1].(*github.Response)
@@ -72,5 +77,6 @@ func (m *MockRepoClient) ListKeys(arg0 context.Context, arg1, arg2 string, arg3 
 
 // ListKeys indicates an expected call of ListKeys
 func (mr *MockRepoClientMockRecorder) ListKeys(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListKeys", reflect.TypeOf((*MockRepoClient)(nil).ListKeys), arg0, arg1, arg2, arg3)
 }

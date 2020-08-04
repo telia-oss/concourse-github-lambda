@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
 
@@ -30,7 +30,7 @@ type GithubApp struct {
 	Clients       map[string]*GithubClient
 }
 
-func newGithubApp(integrationID int, privateKey string) (*GithubApp, error) {
+func newGithubApp(integrationID int64, privateKey string) (*GithubApp, error) {
 	tr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, integrationID, []byte(privateKey))
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (a *GithubApp) createInstallationToken(owner string) (token string, expirat
 	if !ok {
 		return token, expiration, fmt.Errorf("the deploy key app is not installed for user or org: '%s'", owner)
 	}
-	installationToken, _, err := a.App.CreateInstallationToken(context.TODO(), id)
+	installationToken, _, err := a.App.CreateInstallationToken(context.TODO(), id, nil)
 	if err != nil {
 		return token, expiration, fmt.Errorf("failed to create token: %s", err)
 	}

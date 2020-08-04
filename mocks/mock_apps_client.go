@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	github "github.com/google/go-github/github"
+	github "github.com/google/go-github/v29/github"
 	reflect "reflect"
 )
 
@@ -35,8 +35,9 @@ func (m *MockAppsClient) EXPECT() *MockAppsClientMockRecorder {
 }
 
 // CreateInstallationToken mocks base method
-func (m *MockAppsClient) CreateInstallationToken(arg0 context.Context, arg1 int64) (*github.InstallationToken, *github.Response, error) {
-	ret := m.ctrl.Call(m, "CreateInstallationToken", arg0, arg1)
+func (m *MockAppsClient) CreateInstallationToken(arg0 context.Context, arg1 int64, arg2 *github.InstallationTokenOptions) (*github.InstallationToken, *github.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateInstallationToken", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*github.InstallationToken)
 	ret1, _ := ret[1].(*github.Response)
 	ret2, _ := ret[2].(error)
@@ -44,12 +45,14 @@ func (m *MockAppsClient) CreateInstallationToken(arg0 context.Context, arg1 int6
 }
 
 // CreateInstallationToken indicates an expected call of CreateInstallationToken
-func (mr *MockAppsClientMockRecorder) CreateInstallationToken(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstallationToken", reflect.TypeOf((*MockAppsClient)(nil).CreateInstallationToken), arg0, arg1)
+func (mr *MockAppsClientMockRecorder) CreateInstallationToken(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstallationToken", reflect.TypeOf((*MockAppsClient)(nil).CreateInstallationToken), arg0, arg1, arg2)
 }
 
 // ListRepos mocks base method
 func (m *MockAppsClient) ListRepos(arg0 context.Context, arg1 *github.ListOptions) ([]*github.Repository, *github.Response, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListRepos", arg0, arg1)
 	ret0, _ := ret[0].([]*github.Repository)
 	ret1, _ := ret[1].(*github.Response)
@@ -59,5 +62,6 @@ func (m *MockAppsClient) ListRepos(arg0 context.Context, arg1 *github.ListOption
 
 // ListRepos indicates an expected call of ListRepos
 func (mr *MockAppsClientMockRecorder) ListRepos(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepos", reflect.TypeOf((*MockAppsClient)(nil).ListRepos), arg0, arg1)
 }

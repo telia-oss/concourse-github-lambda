@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	logrus "github.com/sirupsen/logrus/hooks/test"
-	"github.com/telia-oss/concourse-github-lambda"
+	handler "github.com/telia-oss/concourse-github-lambda"
 	"github.com/telia-oss/concourse-github-lambda/mocks"
 )
 
@@ -105,7 +105,7 @@ func TestHandler(t *testing.T) {
 			newToken := &github.InstallationToken{Token: github.String("token"), ExpiresAt: &newTokenExpiration}
 
 			apps := mocks.NewMockAppsClient(ctrl)
-			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any()).MinTimes(1).Return(newToken, nil, nil)
+			apps.EXPECT().CreateInstallationToken(gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(1).Return(newToken, nil, nil)
 
 			repos := mocks.NewMockRepoClient(ctrl)
 			repos.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]*github.Key{tc.existingKey}, nil, nil)
