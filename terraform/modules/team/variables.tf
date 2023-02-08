@@ -6,6 +6,12 @@ variable "name" {
   type        = string
 }
 
+variable "use_statement_id_prefix" {
+  description = "If the name is used as a prefix to a randomised name or not"
+  type        = bool
+  default     = false
+}
+
 variable "lambda_arn" {
   description = "ARN of the Github Lambda."
   type        = string
