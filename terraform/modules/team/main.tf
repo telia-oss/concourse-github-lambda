@@ -15,11 +15,12 @@ resource "aws_cloudwatch_event_target" "main" {
 }
 
 resource "aws_lambda_permission" "main" {
-  statement_id  = "concourse-${var.name}-github-lambda-permission"
-  action        = "lambda:InvokeFunction"
-  function_name = var.lambda_arn
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.main.arn
+  statement_id        = var.use_statement_id_prefix ? null : "concourse-${var.name}-github-lambda-permission"
+  statement_id_prefix = var.use_statement_id_prefix ? "concourse-${var.name}-github-lambda-permission-" : null
+  action              = "lambda:InvokeFunction"
+  function_name       = var.lambda_arn
+  principal           = "events.amazonaws.com"
+  source_arn          = aws_cloudwatch_event_rule.main.arn
 }
 
 locals {
