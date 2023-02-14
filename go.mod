@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/aws/aws-lambda-go v1.18.0
-	github.com/aws/aws-sdk-go v1.33.18
+	github.com/aws/aws-sdk-go v1.34.0
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.4.2 // indirect
